@@ -1,0 +1,149 @@
+\documentclass[letterpaper,10pt]{article}
+
+% Font packages
+\usepackage[T1]{fontenc}
+\usepackage{helvet}
+% Using Times font for a more classic look
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage[usenames,dvipsnames]{color}
+
+% Set symmetric margins with geometry package
+\usepackage[
+    margin=0.25in,
+]{geometry}
+
+% Remove page numbers
+\pagestyle{empty}
+
+\usepackage[pdftex]{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    filecolor=black,
+    urlcolor=black,
+}
+
+\urlstyle{same}
+
+\raggedbottom
+\raggedright
+\setlength{\tabcolsep}{0in}
+
+% Section formatting with small caps and no indentation - rule starts at margin
+\titleformat{\section}{
+  \large\scshape
+}{}{0em}{}[\color{black}\titlerule]
+\titlespacing*{\section}{0pt}{4pt}{4pt} % Adjusted spacing after section title
+
+% Content indentation after sections
+\newlength{\contentindent}
+\setlength{\contentindent}{0.5em}  % Indent for content following sections
+
+% Do not apply indentation to section headings but indent content
+\newcommand{\sectioncontent}[1]{%
+  \begin{adjustwidth}{\contentindent}{0pt}%
+  #1%
+  \end{adjustwidth}%
+}
+
+% More compact spacing for lists with increased indentation
+\setlist[itemize]{leftmargin=1.5em, rightmargin=0pt, labelwidth=1em, itemindent=0em, labelsep=0.5em, topsep=2pt, itemsep=0pt, parsep=0pt, partopsep=0pt}
+
+% Bullet point style
+\renewcommand{\labelitemi}{\scriptsize$\bullet$}
+
+% Ensure that generated PDF is machine readable
+\pdfgentounicode=1
+
+% Add the changepage package for adjustwidth environment
+\usepackage{changepage}
+
+% Increase spacing between words - adjust the value as needed
+\spaceskip=0.4em plus 0.25em minus 0.05em
+\begin{document}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\setlength{\rightskip}{0.25em}
+
+\begin{center}
+    {\Huge \textbf{Saurav Sunil Kalaskar}}\\[2pt]
+    
+    \href{http://www.linkedin.com/in/saurav-kalaskar}{linkedin.com/in/saurav-kalaskar/} $|$
+    \href{https://github.com/Saurav-Kalaskar}{github.com/Saurav-Kalaskar/} $|$
+    \href{https://leetcode.com/u/sauravkalaskar7/}{leetcode.com/u/sauravkalaskar7/} $|$
+    \href{https://www.saurav-kalaskar.me/}{Portfolio}
+    \\
+    1255 E University Dr, Tempe, Arizona, 85288 $|$ \href{mailto:skalaska@asu.edu}{skalaska@asu.edu} $|$ (602) 399-6425    
+\end{center}
+
+\section{Education}
+\sectioncontent{
+\textbf{Arizona State University} $|$ Master of Science in Information Technology $|$ GPA: 4.00/4.00 \hfill \textbf{August 2024 - May 2026}
+\\[2pt]
+\textbf{University of Mumbai} $|$ Bachelor of Engineering in Computer Engineering $|$ GPA: 3.41/4.00 \hfill \textbf{August 2018 - May 2022}
+\\[2pt]
+}
+
+\section{Skills}
+\sectioncontent{
+\textbf{Programming Languages}: Java, C\#, Python, TypeScript, JavaScript, SQL\\
+\textbf{Frameworks \& Libraries}: Spring Boot, ASP.NET Core, NestJS, Angular, ReactJS, D3.js, Flask, OpenCV, Pytorch, Pandas\\
+\textbf{Cloud \& Data Technologies}: AWS, Azure, DynamoDB, RDS(PostgreSQL), MS SQL Server, Snowflake, ElastiCache (Redis)\\
+\textbf{DevOps \& Tools}: Docker, Amazon EKS, SQS, SNS, Kinesis, CloudWatch, Kafka, Terraform, CI/CD, Postman, Git, Jenkins\\
+}
+
+\section{Professional Experience}
+\sectioncontent{
+\textbf{Software Engineer Intern} $|$ Rocket Mortgage $|$ Detroit, MI \hfill \textbf{May 2025 - Dec 2025}
+\begin{itemize}
+    \item Designed \textbf{and} implemented a \textbf{full}‑stack Mortgage \textbf{Fee} Setup \textbf{with} Angular 17 frontend \textbf{and} \textbf{REST} \textbf{APIs} in ASP.NET \textbf{Core} \textbf{and} NestJS, applying token‑\textbf{based} \textbf{security} \textbf{and} \textbf{ensuring} \textbf{compliance} at \textbf{scale}.
+    \item Migrated \textbf{services} \textbf{from} Amazon ECS to EKS on \textbf{AWS} Fargate, rebuilt GitHub Actions CI/CD \textbf{with} blue‑green Terraform \textbf{deployments}, reducing release downtime \textbf{and} improving \textbf{pipeline} reliability.
+    \item Refactored legacy codebase, removed 1,500+ lines \textbf{and} tuned Redis caching, cutting \textbf{API} latency by 23\% \textbf{and} \textbf{enhancing} \textbf{observability} via CloudWatch metrics.
+    \item Modernized unit \textbf{and} \textbf{integration} tests \textbf{using} Playwright \textbf{with} Page Object Model, \textbf{automated} \textbf{REST} \textbf{validation} via Insomnia, raising \textbf{automated} coverage to 95\%.
+    \item Implemented \textbf{monitoring} \textbf{with} Splunk \textbf{and} \textbf{AWS} CloudWatch, added Lambda tracing \textbf{and} Auth0 \textbf{SSO} \textbf{for} \textbf{secure}, auditable access \textbf{control}.
+\end{itemize}
+
+\textbf{Software Engineer II} $|$ Accenture $|$ Mumbai, India \hfill \textbf{October 2022 - July 2024}
+\begin{itemize}
+    \item Built \textbf{the} Questionnaire \textbf{Management} Tool \textbf{with} Angular \textbf{and} ASP.NET \textbf{Core}, \textbf{delivering} CRUD \textbf{REST} \textbf{APIs} \textbf{that} \textbf{integrated} Workday \textbf{and} DataFabric, \textbf{and} enforced \textbf{data} \textbf{validation} rules.
+    \item Created D3.js dashboards \textbf{and} AI‑generated cards \textbf{for} a \textbf{Teams} chatbot, embedding model \textbf{confidence} scores \textbf{and} reducing \textbf{support} response \textbf{time} by 40\% \textbf{for} 5,000+ users.
+    \item Optimized MS \textbf{SQL} Server \textbf{schema} \textbf{and} queries \textbf{for} 10,000+ employee \textbf{skill} records, improving \textbf{data} \textbf{freshness} \textbf{checks} \textbf{and} query \textbf{performance}.
+    \item Architected Azure DevOps \textbf{pipelines} \textbf{with} \textbf{automated} \textbf{security} \textbf{testing} (Postman) \textbf{and} \textbf{containerized} \textbf{deployments}, \textbf{ensuring} \textbf{compliance} \textbf{and} rapid \textbf{delivery}.
+    \item Led \textbf{Agile} sprint \textbf{planning} \textbf{and} mentored \textbf{junior} developers, driving cost‑saving \textbf{features} \textbf{and} earning promotion to \textbf{Software} \textbf{Engineer} II.
+\end{itemize}}
+
+\section{Projects}
+\sectioncontent{
+
+\textbf{RealStream - Short Video Streaming Platform} $|$ \href{https://github.com/Saurav-Kalaskar/RealStream.git}{RealStream.git} $|$ \href{https://realstream.site/}{realstream.site} \hfill \textbf{February 2026}
+\begin{itemize}
+    \item Designed polyglot microservices (Java Spring Boot, \textbf{Python} FastAPI) \textbf{for} video \textbf{ingestion}, \textbf{containerized} \textbf{with} Docker \textbf{and} deployed via Cloudflare Tunnel, enabling \textbf{scalable} \textbf{API}‑\textbf{driven} \textbf{processing}.
+    \item Implemented Google OAuth2 \textbf{SSO} \textbf{and} stateless JWT \textbf{sessions} \textbf{with} Spring \textbf{Security}, configuring CORS \textbf{for} \textbf{secure} Next.js frontend access \textbf{and} \textbf{role}‑\textbf{based} \textbf{audit} \textbf{trails}.
+    \item Developed FastAPI scraper \textbf{using} YouTube \textbf{Data} \textbf{API} v3, storing metadata in PostgreSQL \textbf{and} MongoDB, \textbf{and} exposing \textbf{REST} endpoints \textbf{for} downstream \textbf{processing}.
+    \item Built infinite‑scroll video feed \textbf{with} Next.js 16, \textbf{React} 19, \textbf{and} Tailwind CSS, \textbf{delivering} responsive UI while logging front‑\textbf{end} \textbf{performance} metrics.
+\end{itemize}
+
+\textbf{RocketMind - AI Repository Analysis Tool} $|$ Rocket Mortgage Hackathon \hfill \textbf{June 2025}
+\begin{itemize}
+    \item Engineered an AI \textbf{code} analysis \textbf{service} \textbf{that} calls \textbf{AWS} Bedrock LLM via a custom MCP server, \textbf{delivering} model‑\textbf{based} \textbf{insights} \textbf{and} \textbf{confidence} scores \textbf{for} repository scans.
+    \item Created Angular UI \textbf{with} tabbed navigation \textbf{and} FastAPI \textbf{backend} \textbf{that} chunks \textbf{large} codebases, exposing \textbf{REST} \textbf{APIs} \textbf{for} context‑aware \textbf{recommendations}.
+    \item Secured 550+ private GitHub repos \textbf{with} Auth0 \textbf{SSO} linked to \textbf{AWS} IAM, enforcing \textbf{role}‑\textbf{based} access \textbf{and} \textbf{audit} logging \textbf{for} \textbf{compliance}.
+\end{itemize}
+
+
+\textbf{SpyPro - Precision Location Tracking in 3D Space} $|$ \href{https://github.com/Saurav-Kalaskar/SpyPro.git}{SpyPro.git} $|$ \href{https://spypro-lc88.onrender.com/} {spypro-lc88.onrender.com} \hfill \textbf{March 2025}
+\begin{itemize}
+    \item Implemented real‑\textbf{time} 3D tracking \textbf{using} Vite, Mapbox GL JS 3D \textbf{API} \textbf{and} Socket.IO, streaming GPS telemetry \textbf{with} floor‑level accuracy \textbf{and} logging \textbf{events} \textbf{for} anomaly detection.
+    \item Built Node.js/\textbf{Express} \textbf{service} leveraging Mapbox Tilequery \textbf{for} elevation lookups \textbf{and} an LRU cache to compute floor estimates, exposing \textbf{REST} endpoints \textbf{for} downstream \textbf{analytics}.
+    \item Designed Glassmorphic 3D map UI \textbf{with} dynamic floor markers, \textbf{integrating} \textbf{data} \textbf{quality} \textbf{checks} \textbf{and} \textbf{user} interaction logs \textbf{for} \textbf{troubleshooting}.
+\end{itemize}
+}
+
+\section{Publications \& Virtual Internship}
+\sectioncontent{
+{Published research papers: \href{https://www.jetir.org/view?paper=JETIRFD06059}{"Facial Recognition Based Emotion Analysis" at JETIR, October 2021}},  \href{https://drive.google.com/file/d/1oAuZegjDGTgZXc2WC4bzxeZQ2XF0wVNs/view?usp=sharing}{"Predicting Success of Crowdfunding Campaigns Using Machine Learning" at ICEAT-2022"} $|$
+\href{https://drive.google.com/file/d/1KVM6ewcn56FYNm9yJX6cdct4bhXv-Cez/view?usp=sharing}{J.P. Morgan - Software Engineering Virtual Experience}
+}
+\end{document}
