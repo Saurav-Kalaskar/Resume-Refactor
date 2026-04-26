@@ -70,16 +70,3 @@ def compile_tex(tex_content: str) -> Tuple[Optional[bytes], Optional[str]]:
     return pdf_bytes, None
 
 
-def find_latex_compiler() -> Optional[str]:
-    """Locate tectonic binary."""
-    bin_paths = [
-        "tectonic",
-        "/usr/local/bin/tectonic",
-        "/usr/bin/tectonic",
-        os.path.expanduser("~/.cargo/bin/tectonic"),
-        os.path.expanduser("~/.local/bin/tectonic"),
-    ]
-    for path in bin_paths:
-        if subprocess.run(["which", path], capture_output=True).returncode == 0:
-            return path
-    return None
