@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.models import RefactorRequest, RefactorResponse
 from app.llm import generate_bullets
-from app.keywords import extract_keywords, bold_keywords_in_text
+from app.keywords import extract_keywords, bold_keywords_in_text, MAX_KEYWORDS
 from app.bridge import inject_bullets
 from app.compile import compile_tex
 from app.config import settings
@@ -48,9 +48,12 @@ def get_default_resume() -> str:
     raise FileNotFoundError("No default resume template found")
 
 
-def bold_keywords_in_bullets(updates: dict, keywords: List[str]) -> dict:
+def bold_keywords_in_bullets(updates: dict, keywords: List[str], max_keywords: int = MAX_KEYWORDS) -> dict:
     """Bold JD keywords in Experience and Projects bullets only."""
     result = json.loads(json.dumps(updates))  # Deep copy
+
+    # Limit keywords for bolding
+    limited_keywords = keywords[:max_keywords]
 
     sections = ["professional_experience", "projects"]
     for section in sections:
@@ -59,7 +62,7 @@ def bold_keywords_in_bullets(updates: dict, keywords: List[str]) -> dict:
         entries = result[section].get("entries", [])
         for entry in entries:
             bullets = entry.get("bullets", [])
-            entry["bullets"] = [bold_keywords_in_text(b, keywords) for b in bullets]
+            entry["bullets"] = [bold_keywords_in_text(b, limited_keywords, max_keywords) for b in bullets]
 
     return result
 
