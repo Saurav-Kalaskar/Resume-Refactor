@@ -4,6 +4,8 @@ services:
     runtime: docker
     repo: https://github.com/Saurav-Kalaskar/Resume-Refactor
     plan: starter
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
     envVars:
       - key: NVIDIA_API_KEY
         sync: false
