@@ -5,10 +5,83 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ATS Resume Refactoring Engine</title>
-    <script type="module" crossorigin src="/assets/index-C1Q6d564.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-XMqx0exw.css">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;700&family=Space+Grotesk:wght@400;700;900&display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+              "background": "#f9f9f9",
+              "outline-variant": "#c6c6c6",
+              "surface-container-highest": "#e2e2e2",
+              "on-primary-fixed-variant": "#e2e2e2",
+              "tertiary-fixed-dim": "#454747",
+              "surface-container-high": "#e8e8e8",
+              "surface-dim": "#dadada",
+              "surface-container": "#eeeeee",
+              "primary": "#000000",
+              "secondary-container": "#d4d4d4",
+              "on-secondary-fixed": "#1a1c1c",
+              "on-tertiary-fixed-variant": "#e2e2e2",
+              "on-tertiary-fixed": "#ffffff",
+              "on-surface": "#1a1c1c",
+              "tertiary-fixed": "#5d5f5f",
+              "on-secondary-fixed-variant": "#3a3c3c",
+              "tertiary": "#3a3c3c",
+              "tertiary-container": "#737575",
+              "on-error": "#ffffff",
+              "on-error-container": "#410002",
+              "on-primary-fixed": "#ffffff",
+              "error": "#ba1a1a",
+              "on-secondary-container": "#1a1c1c",
+              "secondary-fixed": "#c6c6c6",
+              "inverse-primary": "#c6c6c6",
+              "surface-container-low": "#f4f3f3",
+              "surface-tint": "#5e5e5e",
+              "on-tertiary": "#e2e2e2",
+              "on-tertiary-container": "#ffffff",
+              "primary-fixed-dim": "#474747",
+              "primary-fixed": "#5e5e5e",
+              "secondary": "#5d5e5f",
+              "primary-container": "#3b3b3b",
+              "inverse-surface": "#2f3131",
+              "surface-container-lowest": "#ffffff",
+              "on-surface-variant": "#474747",
+              "on-primary": "#e2e2e2",
+              "surface-bright": "#f9f9f9",
+              "error-container": "#ffdad6",
+              "on-primary-container": "#ffffff",
+              "inverse-on-surface": "#f1f1f0",
+              "surface": "#f9f9f9",
+              "outline": "#777777",
+              "on-secondary": "#ffffff",
+              "on-background": "#1a1c1c",
+              "surface-variant": "#e2e2e2",
+              "secondary-fixed-dim": "#ababab"
+            },
+            "borderRadius": {
+              "DEFAULT": "0.125rem",
+              "lg": "0.25rem",
+              "xl": "0.5rem",
+              "full": "0.75rem"
+            },
+            "fontFamily": {
+              "headline": ["Space Grotesk", "sans-serif"],
+              "display": ["Space Grotesk", "sans-serif"],
+              "body": ["Public Sans", "sans-serif"],
+              "label": ["Public Sans", "sans-serif"]
+            }
+          }
+        }
+      }
+    </script>
+    <script type="module" crossorigin src="/assets/index-CjIesr5o.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-fulNoksP.css">
   </head>
-  <body>
-    <div id="root"></div>
+  <body class="text-on-background font-body min-h-screen flex flex-col">
+    <div id="root" class="flex-1 flex flex-col"></div>
   </body>
 </html>

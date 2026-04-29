@@ -27,3 +27,7 @@ frontend/dist/
 frontend/.vite/
 frontend/.cache/
 frontend/.env*
+
+# Skills folders
+skills/
+.claude/skills/
