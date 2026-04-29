@@ -49,7 +49,7 @@ export const AppContent: React.FC<AppContentProps> = ({
               <div className="relative">
                 <textarea 
                   className="w-full bg-surface-container-lowest border border-primary text-sm font-body px-2 py-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] transition-shadow" 
-                  style={{ borderTopColor: '#fff', borderLeftColor: '#fff', borderRightColor: '#000', borderBottomColor: '#000', borderWidth: '1px' }} 
+                  style={{ borderTopColor: '#fff', borderLeftColor: '#fff', borderRightColor: '#000', borderBottomColor: '#000', borderWidth: '1px', height: '312px' }} 
                   value={jdText}
                   onChange={(e) => setJdText(e.target.value)}
                   rows={4}
