@@ -1,7 +1,7 @@
 import json
 import re
 import time
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from openai import OpenAI
 from app.config import settings
 
@@ -10,12 +10,12 @@ MAX_KEYWORDS = 15
 
 KEYWORD_EXTRACTION_PROMPT = """You are an expert technical recruiter analyzing job descriptions.
 
-Your task: Extract exactly 15 critical keywords from the job description provided.
+Your task: Extract BOTH the hiring company's name AND exactly 15 critical keywords from the job description provided.
 
-Return ONLY a valid JSON array of strings. Examples:
-["Python", "FastAPI", "AWS", "microservices", "fintech", "compliance"]
+Return ONLY a valid JSON object in this exact format:
+{"company_name": "Extracted Company Name", "keywords": ["keyword1", "keyword2", "keyword3", ...]}
 
-Selection criteria:
+Selection criteria for keywords:
 - Include technical skills: frameworks, languages, cloud platforms, databases, tools
 - Include functional/domain terms: industry domains, business areas, methodologies
 - Prioritize skills explicitly mentioned as "required" or "must have"
@@ -23,10 +23,11 @@ Selection criteria:
 - Focus on terms a recruiter would scan for in 6 seconds
 
 Requirements:
-- Output EXACTLY a JSON array, nothing else
-- No markdown formatting, no explanations
+- Output EXACTLY a JSON object with "company_name" and "keywords" keys
+- No markdown formatting, no explanations, no additional text
 - Keywords must be specific (e.g., "React" not "JavaScript framework")
 - Include both technical and domain terms to capture full scope
+- If company name cannot be determined, use empty string ""
 """
 
 
@@ -38,9 +39,9 @@ def get_nvidia_client(api_key: str) -> OpenAI:
     )
 
 
-def _extract_json_array(text: str) -> List[str]:
+def _extract_json_object(text: str) -> dict:
     """
-    Robustly extract JSON array from LLM response, handling markdown backticks.
+    Robustly extract JSON object from LLM response, handling markdown backticks.
     """
     # Strip markdown backticks and code block indicators
     cleaned = text.strip()
@@ -55,52 +56,47 @@ def _extract_json_array(text: str) -> List[str]:
     # Try direct JSON parse first
     try:
         parsed = json.loads(cleaned)
-        if isinstance(parsed, list):
-            return [str(k).strip() for k in parsed if k]
+        if isinstance(parsed, dict):
+            return parsed
     except json.JSONDecodeError:
         pass
 
-    # Regex fallback: find anything between outermost brackets
-    match = re.search(r'\[.*\]', cleaned, re.DOTALL)
+    # Regex fallback: find anything between outermost braces
+    match = re.search(r'\{[\s\S]*\}', cleaned)
     if match:
         try:
             parsed = json.loads(match.group(0))
-            if isinstance(parsed, list):
-                return [str(k).strip() for k in parsed if k]
+            if isinstance(parsed, dict):
+                return parsed
         except json.JSONDecodeError:
             pass
 
-    # Final fallback: extract quoted strings manually
-    strings = re.findall(r'"([^"\n]+)"', cleaned)
-    if strings:
-        return strings
-
-    raise ValueError("Could not extract JSON array from LLM response")
+    raise ValueError("Could not extract JSON object from LLM response")
 
 
-def extract_keywords(jd_text: str, max_keywords: int = MAX_KEYWORDS, api_key: Optional[str] = None) -> List[str]:
+def extract_keywords(jd_text: str, model: str = settings.FAST_MODEL, max_keywords: int = MAX_KEYWORDS, api_key: Optional[str] = None) -> Tuple[List[str], Optional[str]]:
     """
-    Extract recruiter-focused keywords from job description using LLM with user's API key.
+    Extract recruiter-focused keywords AND company name from job description using LLM with user's API key.
 
-    Returns 10-15 highly relevant keywords extracted by expert recruiter LLM.
+    Returns a tuple of (keywords list, company_name string) extracted by expert recruiter LLM.
     Limited to max_keywords to prevent excessive bolding.
     """
     client = get_nvidia_client(api_key) if api_key else None
     if not client:
-        return []
+        return [], None
 
-    user_prompt = f"""Extract {max_keywords} critical keywords from this job description:
+    user_prompt = f"""Extract the company name and {max_keywords} critical keywords from this job description:
 
 {jd_text}
 
-Return ONLY a JSON array of strings."""
+Return ONLY a JSON object with keys "company_name" and "keywords"."""
 
     max_retries = settings.MAX_RETRIES
 
     for attempt in range(1, max_retries + 1):
         try:
             resp = client.chat.completions.create(
-                model=settings.FAST_MODEL,
+                model=model,
                 messages=[
                     {"role": "system", "content": KEYWORD_EXTRACTION_PROMPT},
                     {"role": "user", "content": user_prompt},
@@ -113,8 +109,21 @@ Return ONLY a JSON array of strings."""
             if not result:
                 continue
 
-            # Extract JSON array using robust parser
-            keywords = _extract_json_array(result)
+            # Extract JSON object using robust parser
+            parsed = _extract_json_object(result)
+
+            # Extract company name
+            company_name = parsed.get("company_name", "").strip()
+            if company_name and company_name.lower() in ["none", "n/a", "null", ""]:
+                company_name = None
+
+            # Extract keywords
+            keywords_raw = parsed.get("keywords", [])
+            if not isinstance(keywords_raw, list):
+                keywords_raw = []
+
+            # Normalize keywords
+            keywords = [str(k).strip() for k in keywords_raw if k]
 
             # Remove duplicates while preserving order
             seen = set()
@@ -125,14 +134,14 @@ Return ONLY a JSON array of strings."""
                     unique_keywords.append(kw)
                     seen.add(kw_lower)
 
-            return unique_keywords[:max_keywords]
+            return unique_keywords[:max_keywords], company_name
 
         except Exception:
             if attempt == max_retries:
-                return []
+                return [], None
             time.sleep(1)
 
-    return []
+    return [], None
 
 
 def bold_keywords_in_text(text: str, keywords: List[str], max_keywords: int = MAX_KEYWORDS) -> str:

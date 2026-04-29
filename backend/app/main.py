@@ -5,7 +5,7 @@ from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.models import RefactorRequest, RefactorResponse
-from app.llm import generate_bullets, extract_company_name
+from app.llm import generate_bullets
 from app.keywords import extract_keywords, bold_keywords_in_text, MAX_KEYWORDS
 from app.bridge import inject_bullets
 from app.compile import compile_tex
@@ -48,9 +48,32 @@ def get_default_resume() -> str:
     raise FileNotFoundError("No default resume template found")
 
 
+def normalize_section(section_data):
+    """Normalize section data to dict with entries list."""
+    if isinstance(section_data, dict):
+        if "entries" in section_data:
+            return section_data
+        # Shorthand: {"Label": ["b1", "b2"]} -> wrap in entries
+        entries = []
+        for label, bullets in section_data.items():
+            if isinstance(bullets, list):
+                entries.append({"label": label, "bullets": bullets})
+        return {"entries": entries}
+    if isinstance(section_data, list):
+        # Direct list of entries
+        entries = []
+        for item in section_data:
+            if isinstance(item, dict) and "bullets" in item:
+                entries.append(item)
+            elif isinstance(item, list):
+                entries.append({"bullets": item})
+        return {"entries": entries}
+    return {"entries": []}
+
+
 def bold_keywords_in_bullets(updates: dict, keywords: List[str], max_keywords: int = MAX_KEYWORDS) -> dict:
     """Bold JD keywords in Experience and Projects bullets only."""
-    result = json.loads(json.dumps(updates))  # Deep copy
+    result = json.loads(json.dumps(updates)) # Deep copy
 
     # Limit keywords for bolding
     limited_keywords = keywords[:max_keywords]
@@ -59,10 +82,12 @@ def bold_keywords_in_bullets(updates: dict, keywords: List[str], max_keywords: i
     for section in sections:
         if section not in result:
             continue
-        entries = result[section].get("entries", [])
+        normalized = normalize_section(result[section])
+        entries = normalized.get("entries", [])
         for entry in entries:
             bullets = entry.get("bullets", [])
             entry["bullets"] = [bold_keywords_in_text(b, limited_keywords, max_keywords) for b in bullets]
+        result[section] = normalized # Write normalized back
 
     return result
 
@@ -75,43 +100,57 @@ async def refactor_resume(
     """Main endpoint: refactor resume based on JD using user's API key."""
 
     try:
-        # 1. Extract keywords from JD using user's API key
-        keywords = extract_keywords(request.job_description, api_key=x_nvidia_api_key)
+        # Log model configuration
+        print(f"[MODEL CONFIG] FAST_MODEL={settings.FAST_MODEL}, REASONING_MODEL={settings.REASONING_MODEL}")
+        print(f"[REQUEST MODEL] User requested: {request.model or 'default'}")
 
-        # 2. Extract company name from JD using user's API key
-        company_name = extract_company_name(request.job_description, api_key=x_nvidia_api_key)
+        # 1. Extract keywords AND company name from JD using user's API key in single LLM call
+        print(f"[STEP 1] extract_keywords() using FAST_MODEL={settings.FAST_MODEL}")
+        keywords, company_name = extract_keywords(
+            request.job_description,
+            model=settings.FAST_MODEL,
+            api_key=x_nvidia_api_key
+        )
+        print(f"[STEP 1 RESULT] Found {len(keywords)} keywords, Company: {company_name}")
 
-        # 3. Get base resume
+        # 2. Get base resume
         base_tex = request.base_resume_tex or get_default_resume()
 
-        # 4. Generate tailored bullets via NVIDIA NIM using user's API key
+        # 3. Generate tailored bullets via NVIDIA NIM using user's API key
+        bullets_model = request.model or settings.REASONING_MODEL
+        print(f"[STEP 2] generate_bullets() using model={bullets_model}")
         updates = generate_bullets(
             jd_text=request.job_description,
             base_resume_tex=base_tex,
-            model=request.model,
+            model=bullets_model,
             api_key=x_nvidia_api_key,
         )
+        print(f"[STEP 2 RESULT] Updates structure: {list(updates.keys())}")
 
-        # 5. Bold JD keywords in bullets
+        # 4. Bold JD keywords in bullets
         updates = bold_keywords_in_bullets(updates, keywords)
 
-        # 6. Count bullets
-        bullet_count = sum(
-            len(e.get("bullets", []))
-            for section in updates.values()
-            for e in section.get("entries", [])
-        )
+        # 5. Count bullets
+        bullet_count = 0
+        for section in updates.values():
+            normalized = normalize_section(section)
+            for e in normalized.get("entries", []):
+                bullets = e.get("bullets", []) if isinstance(e, dict) else []
+                bullet_count += len(bullets)
+        print(f"[STEP 4] bullet_count={bullet_count}")
 
-        # 7. Inject into LaTeX
+        # 6. Inject into LaTeX
+        print(f"[STEP 5] inject_bullets() passing {len(updates)} sections to refactor_bridge")
         rebuilt_tex = inject_bullets(base_tex, updates, strict=False)
 
-        # 8. Compile PDF
+        # 7. Compile PDF
+        print(f"[STEP 6] compile_tex()")
         pdf_bytes, error = compile_tex(rebuilt_tex)
 
         if error:
             raise HTTPException(status_code=500, detail=error)
 
-        # 9. Encode PDF
+        # 8. Encode PDF
         pdf_b64 = base64.b64encode(pdf_bytes).decode("utf-8")
 
         return RefactorResponse(

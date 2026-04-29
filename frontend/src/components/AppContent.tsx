@@ -17,6 +17,7 @@ interface AppContentProps {
   setBaseResume: (val: string) => void;
   handleFileUpload: (e: ChangeEvent<HTMLInputElement>) => void;
   handleSubmit: (e: FormEvent) => void;
+  handleReset: () => void;
   loading: boolean;
   error: string;
   result: RefactorResponse | null;
@@ -30,6 +31,7 @@ export const AppContent: React.FC<AppContentProps> = ({
   baseResume,
   handleFileUpload,
   handleSubmit,
+  handleReset,
   loading,
   error,
   result,
@@ -47,9 +49,9 @@ export const AppContent: React.FC<AppContentProps> = ({
             <div className="flex flex-col gap-1">
               <label className="font-label text-xs uppercase tracking-widest text-primary">Target Job Description</label>
               <div className="relative">
-                <textarea 
-                  className="w-full bg-surface-container-lowest border border-primary text-sm font-body px-2 py-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] transition-shadow" 
-                  style={{ borderTopColor: '#fff', borderLeftColor: '#fff', borderRightColor: '#000', borderBottomColor: '#000', borderWidth: '1px', height: '312px' }} 
+                <textarea
+                  className="w-full bg-surface-container-lowest border border-primary text-sm font-body px-2 py-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] transition-shadow"
+                  style={{ borderTopColor: '#fff', borderLeftColor: '#fff', borderRightColor: '#000', borderBottomColor: '#000', borderWidth: '1px', height: '312px' }}
                   value={jdText}
                   onChange={(e) => setJdText(e.target.value)}
                   rows={4}
@@ -57,27 +59,36 @@ export const AppContent: React.FC<AppContentProps> = ({
                 />
               </div>
             </div>
-            
+
             {/* File Upload */}
             <div className="flex flex-col gap-1 pt-2">
               <label className="font-label text-xs uppercase tracking-widest text-primary">Base Resume (Optional)</label>
               <label className="cursor-pointer border border-primary border-dashed p-2 text-center bg-surface-container-lowest shadow-[inset_1px_1px_0px_0px_rgba(0,0,0,0.1)] hover:bg-surface transition-colors" style={{ borderTopColor: '#000', borderLeftColor: '#000', borderRightColor: '#fff', borderBottomColor: '#fff' }}>
-                  <span className="text-xs font-body font-bold">{baseResume ? 'Resume Loaded ✓' : 'Click to Upload (.txt, .tex)'}</span>
-                  <input type="file" accept=".txt,.tex" onChange={handleFileUpload} className="hidden" />
+                <span className="text-xs font-body font-bold">{baseResume ? 'Resume Loaded ✓' : 'Click to Upload (.txt, .tex)'}</span>
+                <input type="file" accept=".txt,.tex" onChange={handleFileUpload} className="hidden" />
               </label>
             </div>
 
             {error && <div className="text-xs font-bold text-error mt-2">{error}</div>}
 
-            {/* Button */}
-            <div className="pt-4">
-              <button 
-                className="w-full bg-surface border border-primary font-headline uppercase text-sm font-bold py-1 px-4 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyIiBoZWlnaHQ9IjIiPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMwMDAiLz48cmVjdCB4PSIxIiB5PSIxIiB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBmaWxsPSIjMDAwIi8+PC9zdmc+')] active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[1px] active:translate-x-[1px] transition-all disabled:opacity-50" 
-                style={{ borderTopColor: '#fff', borderLeftColor: '#fff', borderRightColor: '#000', borderBottomColor: '#000' }} 
+            {/* Buttons */}
+            <div className="pt-4 flex gap-2">
+              <button
+                className="flex-1 bg-surface border border-primary font-headline uppercase text-sm font-bold py-1 px-4 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyIiBoZWlnaHQ9IjIiPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMwMDAiLz48cmVjdCB4PSIxIiB5PSIxIiB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBmaWxsPSIjMDAwIi8+PC9zdmc+')] active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[1px] active:translate-x-[1px] transition-all disabled:opacity-50"
+                style={{ borderTopColor: '#fff', borderLeftColor: '#fff', borderRightColor: '#000', borderBottomColor: '#000' }}
                 type="submit"
                 disabled={loading}
               >
                 {loading ? 'Processing...' : 'Refactor'}
+              </button>
+              <button
+                type="button"
+                onClick={handleReset}
+                disabled={loading}
+                className="bg-surface border border-primary font-headline uppercase text-xs font-bold py-1 px-3 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-surface-container-high active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[1px] active:translate-x-[1px] transition-all disabled:opacity-50"
+                style={{ borderTopColor: '#fff', borderLeftColor: '#fff', borderRightColor: '#000', borderBottomColor: '#000' }}
+              >
+                Reset
               </button>
             </div>
           </form>
@@ -96,7 +107,7 @@ export const AppContent: React.FC<AppContentProps> = ({
       {/* Preview Area */}
       <div className="md:col-span-2 border border-primary bg-surface-container-low relative p-4 flex flex-col">
         <span className="absolute -top-3 left-4 bg-surface px-2 border border-primary font-headline text-xs uppercase font-bold text-primary z-10 shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">Preview Document</span>
-        
+
         <div className="flex-1 bg-surface-container-lowest border border-outline-variant/20 shadow-[inset_2px_2px_0px_0px_rgba(0,0,0,0.1)] p-6 overflow-y-auto font-body text-sm leading-relaxed relative flex flex-col">
           {loading ? (
             <div className="flex-1 flex items-center justify-center font-headline text-primary animate-pulse">Processing Document...</div>
@@ -107,7 +118,7 @@ export const AppContent: React.FC<AppContentProps> = ({
                 <button onClick={downloadPDF} className="border border-primary bg-surface px-2 py-1 text-xs font-bold uppercase shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:bg-surface-container-high active:shadow-none active:translate-y-[1px] active:translate-x-[1px]">PDF</button>
               </div>
               <div className="flex-1">
-                <iframe 
+                <iframe
                   src={`data:application/pdf;base64,${result.pdf_base64}`}
                   width="100%"
                   height="100%"

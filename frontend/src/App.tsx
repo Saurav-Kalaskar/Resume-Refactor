@@ -10,6 +10,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 // sessionStorage keys
 const SS_JD = 'ats_jdText'
 const SS_BASE_RESUME = 'ats_baseResume'
+const SS_ORIGINAL_BASE_RESUME = 'ats_originalBaseResume'
 const SS_RESULT = 'ats_result'
 const SS_COMPANY = 'ats_companyName'
 
@@ -41,10 +42,19 @@ function ssSet(key: string, value: unknown) {
   }
 }
 
+function ssRemove(key: string) {
+  try {
+    sessionStorage.removeItem(key)
+  } catch {
+    // Ignore errors
+  }
+}
+
 export default function App() {
   const [jdText, setJdText] = useState<string>(() => ssGet(SS_JD, ''))
   const [companyName, setCompanyName] = useState<string>(() => ssGet(SS_COMPANY, ''))
   const [baseResume, setBaseResume] = useState<string>(() => ssGet(SS_BASE_RESUME, ''))
+  const [originalBaseResume, setOriginalBaseResume] = useState<string>(() => ssGet(SS_ORIGINAL_BASE_RESUME, ''))
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<RefactorResponse | null>(() => ssGet<RefactorResponse | null>(SS_RESULT, null))
   const [error, setError] = useState('')
@@ -59,6 +69,7 @@ export default function App() {
   // Sync state to sessionStorage on every change
   useEffect(() => { ssSet(SS_JD, jdText) }, [jdText])
   useEffect(() => { ssSet(SS_BASE_RESUME, baseResume) }, [baseResume])
+  useEffect(() => { ssSet(SS_ORIGINAL_BASE_RESUME, originalBaseResume) }, [originalBaseResume])
   useEffect(() => { ssSet(SS_RESULT, result) }, [result])
   useEffect(() => { ssSet(SS_COMPANY, companyName) }, [companyName])
 
@@ -78,6 +89,24 @@ export default function App() {
     if (!file) return
     const text = await file.text()
     setBaseResume(text)
+    setOriginalBaseResume(text) // Store immutable copy
+  }
+
+  const handleReset = () => {
+    // Clear all form states
+    setJdText('')
+    setCompanyName('')
+    setBaseResume('')
+    setOriginalBaseResume('')
+    setResult(null)
+    setError('')
+
+    // Clear sessionStorage
+    ssRemove(SS_JD)
+    ssRemove(SS_COMPANY)
+    ssRemove(SS_BASE_RESUME)
+    ssRemove(SS_ORIGINAL_BASE_RESUME)
+    ssRemove(SS_RESULT)
   }
 
   const handleSubmit = async (e: FormEvent) => {
@@ -94,8 +123,11 @@ export default function App() {
       return
     }
 
-    setLoading(true)
+    // Clear previous result and company name for new request
+    setResult(null)
+    setCompanyName('')
     setError('')
+    setLoading(true)
 
     try {
       const res = await fetch(`${API_URL}/api/v1/refactor`, {
@@ -106,7 +138,7 @@ export default function App() {
         },
         body: JSON.stringify({
           job_description: jdText,
-          base_resume_tex: baseResume || undefined,
+          base_resume_tex: originalBaseResume || undefined, // Always send original
         }),
       })
 
@@ -178,6 +210,7 @@ export default function App() {
           setBaseResume={setBaseResume}
           handleFileUpload={handleFileUpload}
           handleSubmit={handleSubmit}
+          handleReset={handleReset}
           loading={loading}
           error={error}
           result={result}

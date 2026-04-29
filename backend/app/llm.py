@@ -1,7 +1,7 @@
 import json
 import re
 import time
-from typing import Optional, List, Dict, Any
+from typing import Optional, Dict, Any
 from openai import OpenAI
 from app.config import settings
 
@@ -191,37 +191,3 @@ def extract_section(tex: str, name: str) -> str:
     content = re.sub(r"\s*\}\s*$", "", content)
     return content
 
-
-def extract_company_name(jd_text: str, model: Optional[str] = None, api_key: Optional[str] = None) -> Optional[str]:
-    """Extract company name from job description using LLM with user's API key."""
-    prompt = f"""Extract the company name from this job description. Return ONLY the company name, nothing else. If no company name is found, return an empty string.
-
-Job Description:
-{jd_text}
-
-Company name:"""
-
-    client = get_nvidia_client(api_key) if api_key else None
-    if not client:
-        return None
-
-    try:
-        resp = client.chat.completions.create(
-            model=model or settings.FAST_MODEL,
-            messages=[
-                {"role": "system", "content": "Extract company names from job descriptions. Return only the company name, no extra text."},
-                {"role": "user", "content": prompt},
-            ],
-            temperature=0.1,
-            max_tokens=50,
-        )
-
-        result = resp.choices[0].message.content
-        if result:
-            company = result.strip().strip('"').strip("'")
-            if company and company.lower() not in ["none", "n/a", ""]:
-                return company
-    except Exception:
-        pass
-
-    return None
