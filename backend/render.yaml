@@ -2,7 +2,7 @@ services:
   - type: web
     name: ats-resume-backend
     runtime: docker
-    repo: https://github.com/yourusername/ats-resume-refactor
+    repo: https://github.com/Saurav-Kalaskar/Resume-Refactor
     plan: starter
     envVars:
       - key: NVIDIA_API_KEY
