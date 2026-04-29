@@ -21,3 +21,9 @@ test_output.pdf
 .env
 .claude/.tmp/
 .agents/
+# Frontend build artifacts
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/.cache/
+frontend/.env*
