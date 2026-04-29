@@ -1,5 +1,6 @@
 import json
 import re
+import time
 from typing import List
 from openai import OpenAI
 from app.config import settings
@@ -10,11 +11,11 @@ NVIDIA_CLIENT = OpenAI(
 )
 
 # Standardized keyword limit across extraction and bolding
-MAX_KEYWORDS = 12
+MAX_KEYWORDS = 15
 
 KEYWORD_EXTRACTION_PROMPT = """You are an expert technical recruiter analyzing job descriptions.
 
-Your task: Extract exactly 12 critical keywords from the job description provided.
+Your task: Extract exactly 15 critical keywords from the job description provided.
 
 Return ONLY a valid JSON array of strings. Examples:
 ["Python", "FastAPI", "AWS", "microservices", "fintech", "compliance"]
@@ -92,7 +93,7 @@ Return ONLY a JSON array of strings."""
     for attempt in range(1, max_retries + 1):
         try:
             resp = NVIDIA_CLIENT.chat.completions.create(
-                model=settings.DEFAULT_MODEL,
+                model=settings.FAST_MODEL,
                 messages=[
                     {"role": "system", "content": KEYWORD_EXTRACTION_PROMPT},
                     {"role": "user", "content": user_prompt},
@@ -122,7 +123,6 @@ Return ONLY a JSON array of strings."""
         except Exception:
             if attempt == max_retries:
                 return []
-            import time
             time.sleep(1)
 
     return []

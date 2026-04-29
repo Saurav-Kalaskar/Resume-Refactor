@@ -10,20 +10,29 @@ NVIDIA_CLIENT = OpenAI(
     api_key=settings.NVIDIA_API_KEY,
 )
 
-SYSTEM_PROMPT = r"""You are an ATS Resume Refactoring Engine. Rewrite resume bullets to align with Job Description.
+SYSTEM_PROMPT = r'''You are an elite, strict ATS Resume Refactoring Engine and Senior Technical Recruiter. Your singular goal is to tailor the candidate's resume bullets to perfectly align with a target Job Description (JD) while preserving the candidate's original structural depth, enterprise scope, and product ownership.
 
-RULES:
+CRITICAL RULES:
+
 1. ONLY rewrite bullets. NO new roles, projects, or fake metrics.
-2. Keep EXACT same number of bullets per entry.
-3. Keep EXACT same role titles and project names.
-4. Reorder/rephrase bullets to prioritize JD-mentioned skills FIRST.
-5. Naturally weave JD keywords into experience — show "I did this" with those tools.
-6. Be specific: name frameworks, tools, cloud services mentioned in JD.
-7. Each bullet under 180 chars. Active voice, metrics preserved.
-8. Output ONLY JSON. No markdown, no explanation.
 
-Schema:
-{"professional_experience":{"entries":[{"label":"Role Title","bullets":["b1","b2"]}]},"projects":{"entries":[{"label":"Project Title","bullets":["b1","b2"]}]}}"""
+2. Keep the EXACT same number of bullets per entry.
+
+3. Keep the EXACT same role titles and project names.
+
+4. MANDATORY BULLET STRUCTURE: Every single bullet MUST explicitly contain three elements: [Specific Enterprise Feature/Product Built] + [Technology Stack/Methodology] + [Business Impact/Complexity]. Do NOT output generic hollow descriptions like 'Developed web application' or 'Built microservices'.
+
+5. DOMAIN REMAPPING, NOT DELETION: NEVER delete the core product functionality the candidate built (e.g., 'Mortgage Fee Setup', 'Questionnaire Management Tool'). Instead, translate the underlying engineering complexity of that original feature into universal enterprise terminology that resonates with the target JD. For example, if the target JD is Healthcare, retain 'Mortgage Fee Setup' but frame it around its 'strict regulatory compliance, transactional data integrity, and secure state management' to appeal to the new domain's needs.
+
+6. ABSTRACTION OVER FABRICATION: If the candidate's original technology stack differs from the JD's required stack, DO NOT fabricate experience with the JD's tools. Abstract the original tech into foundational principles (e.g., map 'ASP.NET Core' to 'Object-Oriented RESTful backend services') that bridge the gap to the JD's requirements.
+
+7. CONDITIONAL SPECIFICITY: Explicitly name the frameworks, tools, and cloud services mentioned in the JD ONLY IF the candidate actually possesses them in their original resume. If they do not, default strictly to Rule 6 (Abstraction).
+
+8. Each bullet must be under 180 chars. Use active voice and perfectly preserve the original quantitative metrics.
+
+9. Output ONLY a valid JSON object matching the requested schema. No markdown, no formatting, no explanation.
+
+Schema: {"professional_experience":{"entries":[{"label":"Role Title","bullets":["b1","b2"]}]},"projects":{"entries":[{"label":"Project Title","bullets":["b1","b2"]}]}}'''
 
 
 def extract_json_object(text: str) -> str:
@@ -121,7 +130,7 @@ Rewrite ALL bullets to align with JD. Prioritize JD keywords. Output ONLY the JS
     for attempt in range(1, max_retries + 1):
         try:
             resp = NVIDIA_CLIENT.chat.completions.create(
-                model=model or settings.DEFAULT_MODEL,
+                model=model or settings.REASONING_MODEL,
                 messages=[
                     {"role": "system", "content": SYSTEM_PROMPT},
                     {"role": "user", "content": user_prompt},
@@ -173,3 +182,34 @@ def extract_section(tex: str, name: str) -> str:
     content = re.sub(r"^\\sectioncontent\{\s*", "", content)
     content = re.sub(r"\s*\}\s*$", "", content)
     return content
+
+
+def extract_company_name(jd_text: str, model: Optional[str] = None) -> Optional[str]:
+    """Extract company name from job description using LLM."""
+    prompt = f"""Extract the company name from this job description. Return ONLY the company name, nothing else. If no company name is found, return an empty string.
+
+Job Description:
+{jd_text}
+
+Company name:"""
+
+    try:
+        resp = NVIDIA_CLIENT.chat.completions.create(
+            model=model or settings.FAST_MODEL,
+            messages=[
+                {"role": "system", "content": "Extract company names from job descriptions. Return only the company name, no extra text."},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.1,
+            max_tokens=50,
+        )
+
+        result = resp.choices[0].message.content
+        if result:
+            company = result.strip().strip('"').strip("'")
+            if company and company.lower() not in ["none", "n/a", ""]:
+                return company
+    except Exception:
+        pass
+
+    return None

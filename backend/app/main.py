@@ -5,7 +5,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.models import RefactorRequest, RefactorResponse
-from app.llm import generate_bullets
+from app.llm import generate_bullets, extract_company_name
 from app.keywords import extract_keywords, bold_keywords_in_text, MAX_KEYWORDS
 from app.bridge import inject_bullets
 from app.compile import compile_tex
@@ -75,36 +75,39 @@ async def refactor_resume(request: RefactorRequest):
         # 1. Extract keywords from JD
         keywords = extract_keywords(request.job_description)
 
-        # 2. Get base resume
+        # 2. Extract company name from JD
+        company_name = extract_company_name(request.job_description)
+
+        # 3. Get base resume
         base_tex = request.base_resume_tex or get_default_resume()
 
-        # 3. Generate tailored bullets via NVIDIA NIM
+        # 4. Generate tailored bullets via NVIDIA NIM
         updates = generate_bullets(
             jd_text=request.job_description,
             base_resume_tex=base_tex,
             model=request.model,
         )
 
-        # 4. Bold JD keywords in bullets
+        # 5. Bold JD keywords in bullets
         updates = bold_keywords_in_bullets(updates, keywords)
 
-        # 5. Count bullets
+        # 6. Count bullets
         bullet_count = sum(
             len(e.get("bullets", []))
             for section in updates.values()
             for e in section.get("entries", [])
         )
 
-        # 6. Inject into LaTeX
+        # 7. Inject into LaTeX
         rebuilt_tex = inject_bullets(base_tex, updates, strict=False)
 
-        # 7. Compile PDF
+        # 8. Compile PDF
         pdf_bytes, error = compile_tex(rebuilt_tex)
 
         if error:
             raise HTTPException(status_code=500, detail=error)
 
-        # 8. Encode PDF
+        # 9. Encode PDF
         pdf_b64 = base64.b64encode(pdf_bytes).decode("utf-8")
 
         return RefactorResponse(
@@ -114,6 +117,7 @@ async def refactor_resume(request: RefactorRequest):
             latex_source=rebuilt_tex,
             bullets_applied=bullet_count,
             keywords_found=keywords[:15],
+            company_name=company_name,
         )
 
     except Exception as e:

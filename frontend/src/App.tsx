@@ -12,10 +12,12 @@ interface RefactorResponse {
   latex_source: string
   bullets_applied: number
   keywords_found: string[]
+  company_name?: string
 }
 
 export default function App() {
   const [jdText, setJdText] = useState('')
+  const [companyName, setCompanyName] = useState('')
   const [baseResume, setBaseResume] = useState('')
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<RefactorResponse | null>(null)
@@ -58,11 +60,30 @@ export default function App() {
       }
 
       setResult(data)
+      // Set company name from LLM-extracted value
+      if (data.company_name) {
+        setCompanyName(data.company_name)
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
       setLoading(false)
     }
+  }
+
+  const sanitizeFilename = (input: string): string => {
+    // Remove illegal filename characters and replace spaces with underscores
+    return input
+      .trim()
+      .replace(/[<>:"/\\|?*]/g, '')
+      .replace(/\s+/g, '_')
+  }
+
+  const getFilename = (extension: string): string => {
+    const name = companyName.trim()
+      ? `Saurav_Kalaskar_Resume_${sanitizeFilename(companyName)}.${extension}`
+      : `Saurav_Kalaskar_Resume.${extension}`
+    return name
   }
 
   const downloadPDF = () => {
@@ -78,7 +99,7 @@ export default function App() {
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'refactored-resume.pdf'
+    a.download = getFilename('pdf')
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -92,7 +113,7 @@ export default function App() {
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'resume.tex'
+    a.download = getFilename('tex')
     a.click()
     window.URL.revokeObjectURL(url)
   }
@@ -235,18 +256,18 @@ export default function App() {
                   </button>
                 </div>
 
-          {showPreview && (
-              <div className="pdf-preview">
-                <object
-                  data={`data:application/pdf;base64,${result.pdf_base64}`}
-                  type="application/pdf"
-                  width="100%"
-                  height="600px"
-                >
-                  <p>Your browser does not support PDF preview.</p>
-                </object>
-              </div>
-            )}
+                {showPreview && (
+                  <div className="pdf-preview">
+                    <object
+                      data={`data:application/pdf;base64,${result.pdf_base64}`}
+                      type="application/pdf"
+                      width="100%"
+                      height="600px"
+                    >
+                      <p>Your browser does not support PDF preview.</p>
+                    </object>
+                  </div>
+                )}
 
 
                 <div className="actions">

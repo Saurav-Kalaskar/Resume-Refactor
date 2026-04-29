@@ -13,3 +13,4 @@ class RefactorResponse(BaseModel):
     latex_source: str
     bullets_applied: int
     keywords_found: List[str]
+    company_name: Optional[str] = None
