@@ -1,7 +1,7 @@
 import base64
 import json
 from typing import List
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.models import RefactorRequest, RefactorResponse
@@ -68,24 +68,28 @@ def bold_keywords_in_bullets(updates: dict, keywords: List[str], max_keywords: i
 
 
 @app.post("/api/v1/refactor", response_model=RefactorResponse)
-async def refactor_resume(request: RefactorRequest):
-    """Main endpoint: refactor resume based on JD."""
+async def refactor_resume(
+    request: RefactorRequest,
+    x_nvidia_api_key: str = Header(..., alias="X-NVIDIA-API-KEY")
+):
+    """Main endpoint: refactor resume based on JD using user's API key."""
 
     try:
-        # 1. Extract keywords from JD
-        keywords = extract_keywords(request.job_description)
+        # 1. Extract keywords from JD using user's API key
+        keywords = extract_keywords(request.job_description, api_key=x_nvidia_api_key)
 
-        # 2. Extract company name from JD
-        company_name = extract_company_name(request.job_description)
+        # 2. Extract company name from JD using user's API key
+        company_name = extract_company_name(request.job_description, api_key=x_nvidia_api_key)
 
         # 3. Get base resume
         base_tex = request.base_resume_tex or get_default_resume()
 
-        # 4. Generate tailored bullets via NVIDIA NIM
+        # 4. Generate tailored bullets via NVIDIA NIM using user's API key
         updates = generate_bullets(
             jd_text=request.job_description,
             base_resume_tex=base_tex,
             model=request.model,
+            api_key=x_nvidia_api_key,
         )
 
         # 5. Bold JD keywords in bullets

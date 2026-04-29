@@ -1,6 +1,8 @@
-import { useState, useEffect, FormEvent, ChangeEvent } from 'react';
-import { MacWindow } from './components/MacWindow';
-import { AppContent } from './components/AppContent';
+import { useState, useEffect, FormEvent, ChangeEvent } from 'react'
+import { MacWindow } from './components/MacWindow'
+import { AppContent } from './components/AppContent'
+import { Hero } from './components/Hero'
+import { saveApiKey, getApiKey } from './utils/storage'
 
 // API URL
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -46,6 +48,13 @@ export default function App() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<RefactorResponse | null>(() => ssGet<RefactorResponse | null>(SS_RESULT, null))
   const [error, setError] = useState('')
+  const [hasKey, setHasKey] = useState(false)
+
+  // Check for existing valid API key on mount
+  useEffect(() => {
+    const key = getApiKey()
+    setHasKey(!!key)
+  }, [])
 
   // Sync state to sessionStorage on every change
   useEffect(() => { ssSet(SS_JD, jdText) }, [jdText])
@@ -53,10 +62,20 @@ export default function App() {
   useEffect(() => { ssSet(SS_RESULT, result) }, [result])
   useEffect(() => { ssSet(SS_COMPANY, companyName) }, [companyName])
 
+  const handleSaveKey = (key: string) => {
+    saveApiKey(key)
+    setHasKey(true)
+  }
+
+  // Exit to hero WITHOUT clearing the stored key — user can re-enter without re-typing
+  const handleGoHome = () => {
+    setHasKey(false)
+    setError('')
+  }
+
   const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-
     const text = await file.text()
     setBaseResume(text)
   }
@@ -68,13 +87,23 @@ export default function App() {
       return
     }
 
+    const apiKey = getApiKey()
+    if (!apiKey) {
+      setError('Session expired. Please re-enter your API key.')
+      setHasKey(false)
+      return
+    }
+
     setLoading(true)
     setError('')
 
     try {
       const res = await fetch(`${API_URL}/api/v1/refactor`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-NVIDIA-API-KEY': apiKey,
+        },
         body: JSON.stringify({
           job_description: jdText,
           base_resume_tex: baseResume || undefined,
@@ -88,7 +117,6 @@ export default function App() {
       }
 
       setResult(data)
-      // Set company name from LLM-extracted value
       if (data.company_name) {
         setCompanyName(data.company_name)
       }
@@ -99,13 +127,8 @@ export default function App() {
     }
   }
 
-  const sanitizeFilename = (input: string): string => {
-    // Remove illegal filename characters and replace spaces with underscores
-    return input
-      .trim()
-      .replace(/[<>:"/\\|?*]/g, '')
-      .replace(/\s+/g, '_')
-  }
+  const sanitizeFilename = (input: string): string =>
+    input.trim().replace(/[<>:"/\\|?*]/g, '').replace(/\s+/g, '_')
 
   const getFilename = (extension: string): string => {
     const name = companyName.trim()
@@ -116,14 +139,10 @@ export default function App() {
 
   const downloadPDF = () => {
     if (!result?.pdf_base64) return
-
     const binary = atob(result.pdf_base64)
     const bytes = new Uint8Array(binary.length)
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i)
-    }
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
     const blob = new Blob([bytes], { type: 'application/pdf' })
-
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -136,7 +155,6 @@ export default function App() {
 
   const downloadLatex = () => {
     if (!result?.latex_source) return
-
     const blob = new Blob([result.latex_source], { type: 'application/x-tex' })
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -146,9 +164,13 @@ export default function App() {
     window.URL.revokeObjectURL(url)
   }
 
+  if (!hasKey) {
+    return <Hero onSave={handleSaveKey} />
+  }
+
   return (
     <div className="min-h-screen">
-      <MacWindow>
+      <MacWindow onGoHome={handleGoHome}>
         <AppContent
           jdText={jdText}
           setJdText={setJdText}
@@ -164,5 +186,5 @@ export default function App() {
         />
       </MacWindow>
     </div>
-  );
+  )
 }

@@ -5,11 +5,6 @@ from typing import Optional, List, Dict, Any
 from openai import OpenAI
 from app.config import settings
 
-NVIDIA_CLIENT = OpenAI(
-    base_url=settings.NVIDIA_BASE_URL,
-    api_key=settings.NVIDIA_API_KEY,
-)
-
 SYSTEM_PROMPT = r'''You are an elite, strict ATS Resume Refactoring Engine and Senior Technical Recruiter. Your singular goal is to tailor the candidate's resume bullets to perfectly align with a target Job Description (JD) while preserving the candidate's original structural depth, enterprise scope, and product ownership.
 
 CRITICAL RULES:
@@ -33,6 +28,14 @@ CRITICAL RULES:
 9. Output ONLY a valid JSON object matching the requested schema. No markdown, no formatting, no explanation.
 
 Schema: {"professional_experience":{"entries":[{"label":"Role Title","bullets":["b1","b2"]}]},"projects":{"entries":[{"label":"Project Title","bullets":["b1","b2"]}]}}'''
+
+
+def get_nvidia_client(api_key: str) -> OpenAI:
+    """Create NVIDIA OpenAI client with user's API key."""
+    return OpenAI(
+        base_url=settings.NVIDIA_BASE_URL,
+        api_key=api_key,
+    )
 
 
 def extract_json_object(text: str) -> str:
@@ -107,8 +110,13 @@ def generate_bullets(
     jd_text: str,
     base_resume_tex: str,
     model: Optional[str] = None,
+    api_key: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Generate JD-tailored bullets via NVIDIA NIM."""
+    """Generate JD-tailored bullets via NVIDIA NIM using user's API key."""
+
+    client = get_nvidia_client(api_key) if api_key else None
+    if not client:
+        raise ValueError("API key is required")
 
     # Extract sections from LaTeX
     prof_exp = extract_section(base_resume_tex, "Professional Experience")
@@ -129,7 +137,7 @@ Rewrite ALL bullets to align with JD. Prioritize JD keywords. Output ONLY the JS
 
     for attempt in range(1, max_retries + 1):
         try:
-            resp = NVIDIA_CLIENT.chat.completions.create(
+            resp = client.chat.completions.create(
                 model=model or settings.REASONING_MODEL,
                 messages=[
                     {"role": "system", "content": SYSTEM_PROMPT},
@@ -184,8 +192,8 @@ def extract_section(tex: str, name: str) -> str:
     return content
 
 
-def extract_company_name(jd_text: str, model: Optional[str] = None) -> Optional[str]:
-    """Extract company name from job description using LLM."""
+def extract_company_name(jd_text: str, model: Optional[str] = None, api_key: Optional[str] = None) -> Optional[str]:
+    """Extract company name from job description using LLM with user's API key."""
     prompt = f"""Extract the company name from this job description. Return ONLY the company name, nothing else. If no company name is found, return an empty string.
 
 Job Description:
@@ -193,8 +201,12 @@ Job Description:
 
 Company name:"""
 
+    client = get_nvidia_client(api_key) if api_key else None
+    if not client:
+        return None
+
     try:
-        resp = NVIDIA_CLIENT.chat.completions.create(
+        resp = client.chat.completions.create(
             model=model or settings.FAST_MODEL,
             messages=[
                 {"role": "system", "content": "Extract company names from job descriptions. Return only the company name, no extra text."},

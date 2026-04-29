@@ -1,14 +1,9 @@
 import json
 import re
 import time
-from typing import List
+from typing import List, Optional
 from openai import OpenAI
 from app.config import settings
-
-NVIDIA_CLIENT = OpenAI(
-    base_url=settings.NVIDIA_BASE_URL,
-    api_key=settings.NVIDIA_API_KEY,
-)
 
 # Standardized keyword limit across extraction and bolding
 MAX_KEYWORDS = 15
@@ -33,6 +28,14 @@ Requirements:
 - Keywords must be specific (e.g., "React" not "JavaScript framework")
 - Include both technical and domain terms to capture full scope
 """
+
+
+def get_nvidia_client(api_key: str) -> OpenAI:
+    """Create NVIDIA OpenAI client with user's API key."""
+    return OpenAI(
+        base_url=settings.NVIDIA_BASE_URL,
+        api_key=api_key,
+    )
 
 
 def _extract_json_array(text: str) -> List[str]:
@@ -75,13 +78,17 @@ def _extract_json_array(text: str) -> List[str]:
     raise ValueError("Could not extract JSON array from LLM response")
 
 
-def extract_keywords(jd_text: str, max_keywords: int = MAX_KEYWORDS) -> List[str]:
+def extract_keywords(jd_text: str, max_keywords: int = MAX_KEYWORDS, api_key: Optional[str] = None) -> List[str]:
     """
-    Extract recruiter-focused keywords from job description using LLM.
+    Extract recruiter-focused keywords from job description using LLM with user's API key.
 
     Returns 10-15 highly relevant keywords extracted by expert recruiter LLM.
     Limited to max_keywords to prevent excessive bolding.
     """
+    client = get_nvidia_client(api_key) if api_key else None
+    if not client:
+        return []
+
     user_prompt = f"""Extract {max_keywords} critical keywords from this job description:
 
 {jd_text}
@@ -92,7 +99,7 @@ Return ONLY a JSON array of strings."""
 
     for attempt in range(1, max_retries + 1):
         try:
-            resp = NVIDIA_CLIENT.chat.completions.create(
+            resp = client.chat.completions.create(
                 model=settings.FAST_MODEL,
                 messages=[
                     {"role": "system", "content": KEYWORD_EXTRACTION_PROMPT},
