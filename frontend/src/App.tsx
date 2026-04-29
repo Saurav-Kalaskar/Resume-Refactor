@@ -1,10 +1,15 @@
-import { useState, FormEvent, ChangeEvent } from 'react';
+import { useState, useEffect, FormEvent, ChangeEvent } from 'react';
 import { MacWindow } from './components/MacWindow';
 import { AppContent } from './components/AppContent';
 
-
 // API URL
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+
+// sessionStorage keys
+const SS_JD = 'ats_jdText'
+const SS_BASE_RESUME = 'ats_baseResume'
+const SS_RESULT = 'ats_result'
+const SS_COMPANY = 'ats_companyName'
 
 interface RefactorResponse {
   status: string
@@ -16,14 +21,37 @@ interface RefactorResponse {
   company_name?: string
 }
 
+// Helpers to read/write sessionStorage safely
+function ssGet<T>(key: string, fallback: T): T {
+  try {
+    const raw = sessionStorage.getItem(key)
+    return raw !== null ? (JSON.parse(raw) as T) : fallback
+  } catch {
+    return fallback
+  }
+}
+
+function ssSet(key: string, value: unknown) {
+  try {
+    sessionStorage.setItem(key, JSON.stringify(value))
+  } catch {
+    // Storage quota exceeded (e.g. large PDF) — fail silently
+  }
+}
+
 export default function App() {
-  const [jdText, setJdText] = useState('')
-  const [companyName, setCompanyName] = useState('')
-  const [baseResume, setBaseResume] = useState('')
+  const [jdText, setJdText] = useState<string>(() => ssGet(SS_JD, ''))
+  const [companyName, setCompanyName] = useState<string>(() => ssGet(SS_COMPANY, ''))
+  const [baseResume, setBaseResume] = useState<string>(() => ssGet(SS_BASE_RESUME, ''))
   const [loading, setLoading] = useState(false)
-  const [result, setResult] = useState<RefactorResponse | null>(null)
+  const [result, setResult] = useState<RefactorResponse | null>(() => ssGet<RefactorResponse | null>(SS_RESULT, null))
   const [error, setError] = useState('')
 
+  // Sync state to sessionStorage on every change
+  useEffect(() => { ssSet(SS_JD, jdText) }, [jdText])
+  useEffect(() => { ssSet(SS_BASE_RESUME, baseResume) }, [baseResume])
+  useEffect(() => { ssSet(SS_RESULT, result) }, [result])
+  useEffect(() => { ssSet(SS_COMPANY, companyName) }, [companyName])
 
   const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
