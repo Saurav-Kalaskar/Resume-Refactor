@@ -27,6 +27,9 @@ RUN python -m spacy download en_core_web_sm || true
 COPY backend/app/ ./app/
 COPY backend/templates/ ./templates/
 
+# Copy .claude skills directory so refactor_bridge can be imported
+COPY .claude/ ./.claude/
+
 # Copy resume.tex from repo root
 COPY resume.tex ./resume.tex
 
