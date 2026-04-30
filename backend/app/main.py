@@ -169,4 +169,5 @@ async def refactor_resume(
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "model": settings.DEFAULT_MODEL}
+    return {"status": "ok", "fast_model": settings.FAST_MODEL, "reasoning_model": settings.REASONING_MODEL}
+
