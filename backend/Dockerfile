@@ -30,6 +30,9 @@ COPY backend/templates/ ./templates/
 # Copy .claude skills directory so refactor_bridge can be imported
 COPY .claude/ ./.claude/
 
+# Add PYTHONPATH so Python can find refactor_bridge module
+ENV PYTHONPATH="/app/.claude/skills/resume-refactor:${PYTHONPATH}"
+
 # Copy resume.tex from repo root
 COPY resume.tex ./resume.tex
 
