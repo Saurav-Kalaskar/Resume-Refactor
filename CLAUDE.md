@@ -1,4 +1,6 @@
-# CLAUDE.md This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Commands
 
@@ -20,17 +22,6 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 docker build -t resume-backend -f backend/Dockerfile .
 docker run -p 8000:8000 --env-file .env resume-backend
 ```
-
-No test framework configured. No CI/CD.
-
-## Environment
-
-Copy `.env.example` → `.env`. Required vars:
-- `FAST_MODEL` — keyword extraction model (default: `openai/gpt-oss-20b`)
-- `REASONING_MODEL` — bullet generation model (default: `qwen/qwen3-next-80b-a3b-instruct`)
-- `MAX_RETRIES`, `MAX_CHARS`
-
-NVIDIA API key entered by user in UI (stored browser-side only, passed via `X-NVIDIA-API-KEY` header).
 
 ## Architecture
 
