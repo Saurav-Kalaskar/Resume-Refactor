@@ -1,4 +1,5 @@
-import { useState, useEffect, FormEvent, ChangeEvent } from 'react'
+import { useState, useEffect, useRef, FormEvent, ChangeEvent } from 'react'
+// AbortController for canceling ongoing request
 import { MacWindow } from './components/MacWindow'
 import { AppContent } from './components/AppContent'
 import { Hero } from './components/Hero'
@@ -50,12 +51,16 @@ function ssRemove(key: string) {
   }
 }
 
+
 export default function App() {
   const [jdText, setJdText] = useState<string>(() => ssGet(SS_JD, ''))
   const [companyName, setCompanyName] = useState<string>(() => ssGet(SS_COMPANY, ''))
   const [baseResume, setBaseResume] = useState<string>(() => ssGet(SS_BASE_RESUME, ''))
   const [originalBaseResume, setOriginalBaseResume] = useState<string>(() => ssGet(SS_ORIGINAL_BASE_RESUME, ''))
   const [loading, setLoading] = useState(false)
+  const [elapsedTime, setElapsedTime] = useState(0)
+  const intervalRef = useRef<number | null>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
   const [result, setResult] = useState<RefactorResponse | null>(() => ssGet<RefactorResponse | null>(SS_RESULT, null))
   const [error, setError] = useState('')
   const [hasKey, setHasKey] = useState(false)
@@ -93,6 +98,12 @@ export default function App() {
   }
 
   const handleReset = () => {
+    // Abort any ongoing request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+      abortControllerRef.current = null
+    }
+
     // Clear all form states
     setJdText('')
     setCompanyName('')
@@ -101,7 +112,12 @@ export default function App() {
     setResult(null)
     setError('')
 
-    // Clear sessionStorage
+    // Clear timer if running
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
+    }
+    setElapsedTime(0)
     ssRemove(SS_JD)
     ssRemove(SS_COMPANY)
     ssRemove(SS_BASE_RESUME)
@@ -128,6 +144,18 @@ export default function App() {
     setCompanyName('')
     setError('')
     setLoading(true)
+    // Start timer
+    setElapsedTime(0)
+    intervalRef.current = window.setInterval(() => {
+      setElapsedTime(prev => {
+        const next = +(prev + 0.1).toFixed(1)
+        return next
+      })
+    }, 100)
+
+    // Abort controller for this request
+    const controller = new AbortController()
+    abortControllerRef.current = controller
 
     try {
       const res = await fetch(`${API_URL}/api/v1/refactor`, {
@@ -140,6 +168,7 @@ export default function App() {
           job_description: jdText,
           base_resume_tex: originalBaseResume || undefined, // Always send original
         }),
+        signal: controller.signal,
       })
 
       const data = await res.json()
@@ -152,10 +181,20 @@ export default function App() {
       if (data.company_name) {
         setCompanyName(data.company_name)
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
+    } catch (err:any) {
+      if (err.name === 'AbortError') {
+        // Request canceled, silent
+        setError('')
+      } else {
+        setError(err instanceof Error ? err.message : 'An error occurred')
+      }
     } finally {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+      }
       setLoading(false)
+      abortControllerRef.current = null
     }
   }
 
@@ -216,6 +255,7 @@ export default function App() {
           result={result}
           downloadPDF={downloadPDF}
           downloadLatex={downloadLatex}
+          elapsedTime={elapsedTime}
         />
       </MacWindow>
     </div>

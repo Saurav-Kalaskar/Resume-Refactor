@@ -23,6 +23,7 @@ interface AppContentProps {
   result: RefactorResponse | null;
   downloadPDF: () => void;
   downloadLatex: () => void;
+  elapsedTime: number;
 }
 
 export const AppContent: React.FC<AppContentProps> = ({
@@ -36,7 +37,8 @@ export const AppContent: React.FC<AppContentProps> = ({
   error,
   result,
   downloadPDF,
-  downloadLatex
+  downloadLatex,
+  elapsedTime,
 }) => {
   return (
     <>
@@ -110,10 +112,20 @@ export const AppContent: React.FC<AppContentProps> = ({
 
         <div className="flex-1 bg-surface-container-lowest border border-outline-variant/20 shadow-[inset_2px_2px_0px_0px_rgba(0,0,0,0.1)] p-6 overflow-y-auto font-body text-sm leading-relaxed relative flex flex-col">
           {loading ? (
-            <div className="flex-1 flex items-center justify-center font-headline text-primary animate-pulse">Processing Document...</div>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 flex items-center justify-center font-headline text-primary animate-pulse">Processing... {elapsedTime.toFixed(1)}s</div>
+              <button
+                type="button"
+                onClick={handleReset}
+                className="bg-surface border border-primary font-headline uppercase text-xs font-bold py-1 px-3 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-surface-container-high active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[1px] active:translate-x-[1px] transition-all"
+                style={{ borderTopColor: '#fff', borderLeftColor: '#fff', borderRightColor: '#000', borderBottomColor: '#000' }}
+              >
+                Reset
+              </button>
+            </div>
           ) : result ? (
             <>
-              <div className="flex justify-end gap-2 mb-4">
+                                <div className="flex justify-end gap-2 mb-4">
                 <button onClick={downloadLatex} className="border border-primary bg-surface px-2 py-1 text-xs font-bold uppercase shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:bg-surface-container-high active:shadow-none active:translate-y-[1px] active:translate-x-[1px]">.TEX</button>
                 <button onClick={downloadPDF} className="border border-primary bg-surface px-2 py-1 text-xs font-bold uppercase shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:bg-surface-container-high active:shadow-none active:translate-y-[1px] active:translate-x-[1px]">PDF</button>
               </div>
@@ -129,6 +141,7 @@ export const AppContent: React.FC<AppContentProps> = ({
               <div className="mt-4 pt-4 border-t border-primary/20 text-xs font-bold flex justify-between">
                 <span>{result.bullets_applied} Bullets Refactored</span>
                 <span>{result.keywords_found?.length || 0} Keywords Injected</span>
+                <span>{elapsedTime.toFixed(1)}s</span>
               </div>
             </>
           ) : (

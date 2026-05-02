@@ -1,7 +1,7 @@
 import base64
 import json
 from typing import List
-from fastapi import FastAPI, HTTPException, Header
+from fastapi import FastAPI, HTTPException, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.models import RefactorRequest, RefactorResponse
