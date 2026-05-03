@@ -105,23 +105,30 @@ async def refactor_resume(
         print(f"[REQUEST MODEL] User requested: {request.model or 'default'}")
 
         # 1. Extract keywords AND company name from JD using user's API key in single LLM call
+        # 1. Extract strategic context & keywords from JD
         print(f"[STEP 1] extract_keywords() using FAST_MODEL={settings.FAST_MODEL}")
-        keywords, company_name = extract_keywords(
+        extraction_data = extract_keywords(
             request.job_description,
             model=settings.FAST_MODEL,
             api_key=x_nvidia_api_key
         )
+        keywords = extraction_data.get("all_keywords", [])
+        company_name = extraction_data.get("company_name")
+        company_mission = extraction_data.get("company_mission_and_product", "")
+        core_problems = extraction_data.get("core_problems_to_solve", "")
         print(f"[STEP 1 RESULT] Found {len(keywords)} keywords, Company: {company_name}")
 
         # 2. Get base resume
         base_tex = request.base_resume_tex or get_default_resume()
 
-        # 3. Generate tailored bullets via NVIDIA NIM using user's API key
+        # 3. Generate tailored bullets with strategic context
         bullets_model = request.model or settings.REASONING_MODEL
         print(f"[STEP 2] generate_bullets() using model={bullets_model}")
         updates = generate_bullets(
             jd_text=request.job_description,
             base_resume_tex=base_tex,
+            company_mission=company_mission,
+            core_problems=core_problems,
             model=bullets_model,
             api_key=x_nvidia_api_key,
         )

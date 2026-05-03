@@ -5,29 +5,22 @@ from typing import Optional, Dict, Any
 from openai import OpenAI
 from app.config import settings
 
-SYSTEM_PROMPT = r'''You are an elite, strict ATS Resume Refactoring Engine and Senior Technical Recruiter. Your singular goal is to tailor the candidate's resume bullets to perfectly align with a target Job Description (JD) while preserving the candidate's original structural depth, enterprise scope, and product ownership.
+SYSTEM_PROMPT = r'''<instructions>
+You are an Elite ATS Resume Refactoring Engine. Your task is to rewrite the candidate's resume bullets to strategically align with the target company's mission, product, and core problems, while organically incorporating the required job description keywords.
 
 CRITICAL RULES:
+1. STRATEGIC REFRAMING, NOT KEYWORD STUFFING: Do not just blindly replace words. Reframe the candidate's past impact so it demonstrates how they can solve the specific problems the target company is facing.
+2. SHOW, DON'T JUST TELL: If the target company builds high-scale streaming APIs, reframe the candidate's backend experience to emphasize scalability, latency, and data throughput.
+3. DOMAIN GENERALIZATION: Strip out hyper-specific internal project names from the candidate's past roles. Replace them with generalized, high-impact business terminology that proves architectural scale.
+4. ABSTRACTION: If the candidate's tech stack differs slightly from the JD, abstract their experience into foundational engineering principles (e.g., translate 'ASP.NET Core APIs' to 'Object-Oriented RESTful API development').
+5. STRICT CONSTRAINTS: Keep EXACTLY the same number of bullets per entry. Keep EXACTLY the same role titles and project names. NO fake metrics.
+6. Each bullet must be under 180 chars. Output ONLY a valid JSON object matching the schema below. No markdown formatting.
+</instructions>
 
-1. ONLY rewrite bullets. NO new roles, projects, or fake metrics.
+<output_schema>
+{"professional_experience":{"entries":[{"label":"Role Title","bullets":["b1","b2"]}]},"projects":{"entries":[{"label":"Project Title","bullets":["b1","b2"]}]}}
+</output_schema>'''
 
-2. Keep the EXACT same number of bullets per entry.
-
-3. Keep the EXACT same role titles and project names.
-
-4. MANDATORY BULLET STRUCTURE: Every single bullet MUST explicitly contain three elements: [Specific Enterprise Feature/Product Built] + [Technology Stack/Methodology] + [Business Impact/Complexity]. Do NOT output generic hollow descriptions like 'Developed web application' or 'Built microservices'.
-
-5. DOMAIN REMAPPING, NOT DELETION: NEVER delete the core product functionality the candidate built (e.g., 'Mortgage Fee Setup', 'Questionnaire Management Tool'). Instead, translate the underlying engineering complexity of that original feature into universal enterprise terminology that resonates with the target JD. For example, if the target JD is Healthcare, retain 'Mortgage Fee Setup' but frame it around its 'strict regulatory compliance, transactional data integrity, and secure state management' to appeal to the new domain's needs.
-
-6. ABSTRACTION OVER FABRICATION: If the candidate's original technology stack differs from the JD's required stack, DO NOT fabricate experience with the JD's tools. Abstract the original tech into foundational principles (e.g., map 'ASP.NET Core' to 'Object-Oriented RESTful backend services') that bridge the gap to the JD's requirements.
-
-7. CONDITIONAL SPECIFICITY: Explicitly name the frameworks, tools, and cloud services mentioned in the JD ONLY IF the candidate actually possesses them in their original resume. If they do not, default strictly to Rule 6 (Abstraction).
-
-8. Each bullet must be under 180 chars. Use active voice and perfectly preserve the original quantitative metrics.
-
-9. Output ONLY a valid JSON object matching the requested schema. No markdown, no formatting, no explanation.
-
-Schema: {"professional_experience":{"entries":[{"label":"Role Title","bullets":["b1","b2"]}]},"projects":{"entries":[{"label":"Project Title","bullets":["b1","b2"]}]}}'''
 
 
 def get_nvidia_client(api_key: str) -> OpenAI:
@@ -109,10 +102,13 @@ def validate_updates(data: dict) -> bool:
 def generate_bullets(
     jd_text: str,
     base_resume_tex: str,
+    company_mission: str,
+    core_problems: str,
     model: Optional[str] = None,
     api_key: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Generate JD-tailored bullets via NVIDIA NIM using user's API key."""
+    """Generate JD-tailored bullets with strategic context via NVIDIA NIM using user's API key."""
+
 
     client = get_nvidia_client(api_key) if api_key else None
     if not client:
@@ -122,16 +118,24 @@ def generate_bullets(
     prof_exp = extract_section(base_resume_tex, "Professional Experience")
     projects = extract_section(base_resume_tex, "Projects")
 
-    user_prompt = f"""Job Description:
+    user_prompt = f"""<target_company_context>
+Mission/Product: {company_mission}
+Core Problems to Solve: {core_problems}
+</target_company_context>
+
+<job_description>
 {jd_text}
+</job_description>
 
-Current Professional Experience:
+<candidates_current_experience>
 {prof_exp}
+</candidates_current_experience>
 
-Current Projects:
+<candidates_current_projects>
 {projects}
+</candidates_current_projects>
 
-Rewrite ALL bullets to align with JD. Prioritize JD keywords. Output ONLY the JSON object."""
+Rewrite ALL bullets to align with the Target Company Context and Job Description. Output ONLY the JSON object."""
 
     max_retries = settings.MAX_RETRIES
 
