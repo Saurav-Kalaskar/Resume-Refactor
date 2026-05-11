@@ -154,7 +154,7 @@ def bold_keywords_in_text(text: str, keywords: List[str], max_keywords: int = MA
     """
     Wrap JD-matching keywords in \textbf{}.
 
-    Only bolds top max_keywords keywords.
+    Only bolds top max_keywords unique keywords (each bolded at most once).
     Handles plurals by optionally matching 's' or 'es' suffixes.
     Uses case-insensitive word boundary matching.
     """
@@ -162,30 +162,23 @@ def bold_keywords_in_text(text: str, keywords: List[str], max_keywords: int = MA
         return text
 
     result = text
-    # Limit to top N keywords
     limited_keywords = keywords[:max_keywords]
-    # Sort by length descending to avoid partial replacements
     sorted_kws = sorted(set(limited_keywords), key=len, reverse=True)
+    used_keywords = set()
 
     for kw in sorted_kws:
-        # Skip if empty or too short
-        if not kw or len(kw) < 2:
+        if not kw or len(kw) < 2 or kw.lower() in used_keywords:
             continue
 
-        # Escape regex special chars
         escaped = re.escape(kw)
-
-        # Pattern matches keyword with optional plural suffix (s or es)
-        # (?i) = case-insensitive
-        # (?<![A-Za-z0-9_]) = negative lookbehind for word char
-        # (?:s|es)? = optional plural suffix
-        # (?![A-Za-z0-9_]) = negative lookahead for word char
         pattern = rf'(?i)(?<![A-Za-z0-9_]){escaped}(?:s|es)?(?![A-Za-z0-9_])'
 
-        # Replace with \textbf{matched_text}
         def replace_with_bold(match):
             return rf'\textbf{{{match.group(0)}}}'
 
-        result = re.sub(pattern, replace_with_bold, result)
+        new_result = re.sub(pattern, replace_with_bold, result)
+        if new_result != result:
+            used_keywords.add(kw.lower())
+            result = new_result
 
     return result

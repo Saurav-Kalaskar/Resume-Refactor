@@ -78,6 +78,9 @@ def bold_keywords_in_bullets(updates: dict, keywords: List[str], max_keywords: i
     # Limit keywords for bolding
     limited_keywords = keywords[:max_keywords]
 
+    # Sentinel to join bullets for batch processing (ensures used_keywords tracks across all bullets in section)
+    sentinel = "\n---BULLET---\n"
+
     sections = ["professional_experience", "projects"]
     for section in sections:
         if section not in result:
@@ -86,7 +89,12 @@ def bold_keywords_in_bullets(updates: dict, keywords: List[str], max_keywords: i
         entries = normalized.get("entries", [])
         for entry in entries:
             bullets = entry.get("bullets", [])
-            entry["bullets"] = [bold_keywords_in_text(b, limited_keywords, max_keywords) for b in bullets]
+            if not bullets:
+                continue
+            # Join all bullets, bold once (tracking used_keywords across entire section), then split
+            joined = sentinel.join(bullets)
+            bolded_joined = bold_keywords_in_text(joined, limited_keywords, max_keywords)
+            entry["bullets"] = bolded_joined.split(sentinel)
         result[section] = normalized # Write normalized back
 
     return result
@@ -129,6 +137,7 @@ async def refactor_resume(
             base_resume_tex=base_tex,
             company_mission=company_mission,
             core_problems=core_problems,
+            all_keywords=keywords,
             model=bullets_model,
             api_key=x_nvidia_api_key,
         )

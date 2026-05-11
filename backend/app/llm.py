@@ -1,7 +1,7 @@
 import json
 import re
 import time
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from openai import OpenAI
 from app.config import settings
 
@@ -104,6 +104,7 @@ def generate_bullets(
     base_resume_tex: str,
     company_mission: str,
     core_problems: str,
+    all_keywords: Optional[List[str]] = None,
     model: Optional[str] = None,
     api_key: Optional[str] = None,
 ) -> Dict[str, Any]:
@@ -135,7 +136,11 @@ Core Problems to Solve: {core_problems}
 {projects}
 </candidates_current_projects>
 
-Rewrite ALL bullets to align with the Target Company Context and Job Description. Output ONLY the JSON object."""
+<extracted_keywords>
+{', '.join(all_keywords) if all_keywords else 'No keywords extracted'}
+</extracted_keywords>
+
+Rewrite ALL bullets to align with the Target Company Context and Job Description. Naturally incorporate the extracted keywords throughout the Professional Experience and Projects sections. Distribute them evenly across bullets rather than clustering in one place. Output ONLY the JSON object."""
 
     max_retries = settings.MAX_RETRIES
 
