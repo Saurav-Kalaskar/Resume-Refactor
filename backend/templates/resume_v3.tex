@@ -1,0 +1,149 @@
+\documentclass[letterpaper,10pt]{article}
+
+% Font packages
+\usepackage[T1]{fontenc}
+\usepackage{helvet}
+% Using Times font for a more classic look
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage[usenames,dvipsnames]{color}
+
+% Set symmetric margins with geometry package
+\usepackage[
+    margin=0.25in,
+]{geometry}
+
+% Remove page numbers
+\pagestyle{empty}
+
+\usepackage[pdftex]{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    filecolor=black,
+    urlcolor=black,
+}
+
+\urlstyle{same}
+
+\raggedbottom
+\raggedright
+\setlength{\tabcolsep}{0in}
+
+% Section formatting with small caps and no indentation - rule starts at margin
+\titleformat{\section}{
+  \large\scshape
+}{}{0em}{}[\color{black}\titlerule]
+\titlespacing*{\section}{0pt}{4pt}{4pt} % Adjusted spacing after section title
+
+% Content indentation after sections
+\newlength{\contentindent}
+\setlength{\contentindent}{0.5em}  % Indent for content following sections
+
+% Do not apply indentation to section headings but indent content
+\newcommand{\sectioncontent}[1]{%
+  \begin{adjustwidth}{\contentindent}{0pt}%
+  #1%
+  \end{adjustwidth}%
+}
+
+% More compact spacing for lists with increased indentation
+\setlist[itemize]{leftmargin=1.5em, rightmargin=0pt, labelwidth=1em, itemindent=0em, labelsep=0.5em, topsep=2pt, itemsep=0pt, parsep=0pt, partopsep=0pt}
+
+% Bullet point style
+\renewcommand{\labelitemi}{\scriptsize$\bullet$}
+
+% Ensure that generated PDF is machine readable
+\pdfgentounicode=1
+
+% Add the changepage package for adjustwidth environment
+\usepackage{changepage}
+
+% Increase spacing between words - adjust the value as needed
+\spaceskip=0.4em plus 0.25em minus 0.05em
+\begin{document}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\setlength{\rightskip}{0.25em}
+
+\begin{center}
+    {\Huge \textbf{Saurav Sunil Kalaskar}}\\[2pt]
+    
+    \href{http://www.linkedin.com/in/saurav-kalaskar}{linkedin.com/in/saurav-kalaskar/} $|$
+    \href{https://github.com/Saurav-Kalaskar}{github.com/Saurav-Kalaskar/} $|$
+    \href{https://leetcode.com/u/sauravkalaskar7/}{leetcode.com/u/sauravkalaskar7/} $|$
+    \href{https://www.saurav-kalaskar.me/}{Portfolio}
+    \\
+    1255 E University Dr, Tempe, Arizona, 85288 $|$ \href{mailto:sauravkalaskar7@gmail.com}{kalaskarsaurav22@gmail.com} $|$ (602) 399-6425    
+\end{center}
+
+\section{Education}
+\sectioncontent{
+\textbf{Arizona State University} $|$ Master of Science in Information Technology $|$ GPA: 4.00/4.00 \hfill \textbf{August 2024 - May 2026}
+\\[2pt]
+\textbf{University of Mumbai} $|$ Bachelor of Engineering in Computer Engineering $|$ GPA: 3.41/4.00 \hfill \textbf{August 2018 - May 2022}
+\\[2pt]
+}
+
+\section{Skills}
+\sectioncontent{
+\textbf{Programming Languages}: Java, C\#, Python, TypeScript, JavaScript, SQL\\
+\textbf{Frameworks \& Libraries}: Spring Boot, ASP.NET Core, NestJS, Angular, ReactJS, D3.js, Flask, OpenCV, Pytorch, Pandas\\
+\textbf{Cloud \& Data Technologies}: AWS, Azure, DynamoDB, RDS(PostgreSQL), MS SQL Server, Snowflake, ElastiCache (Redis)\\
+\textbf{DevOps \& Tools}: Docker, Amazon EKS, SQS, SNS, Kinesis, CloudWatch, Kafka, Terraform, CI/CD, Postman, Git, Jenkins\\
+}
+
+\section{Professional Experience}
+\sectioncontent{
+\textbf{Software Engineer Intern} $|$ Rocket Mortgage $|$ Detroit, MI \hfill \textbf{May 2025 - Present}
+\begin{itemize}
+    \item Built a full-stack Mortgage Fee Setup feature with Angular 17 and RxJS frontend, REST APIs across Java Spring Boot and NestJS microservices, and three-tier service token security architecture for scalable back-end systems.
+    \item Led Amazon ECS to Amazon EKS migration on AWS Fargate, restructured GitHub Actions CI/CD pipelines with blue-green deployments and Terraform IaC, cutting release downtime by 40\% across production mortgage workflows.
+    \item Refactored legacy subsystems eliminating 1,500+ lines across multiple codebases, optimized Redis caching improving API response times by 23\% for Rocket Pro platform handling billions of mortgage transactions via event-driven microservices.
+    \item Drove unit and integration testing modernization from Cypress to Playwright using Page Object Model, validated REST endpoints via Insomnia across Loan, Application, and Pricing APIs, achieving 95\% platform coverage.
+    \item Monitored Splunk logs, AWS CloudWatch, and Lambda executions, integrated Auth0 SSO for secure access control.
+\end{itemize}
+
+\textbf{Software Engineer II} $|$ Accenture $|$ Mumbai, India \hfill \textbf{October 2022 - July 2024}
+\begin{itemize}
+    \item Developed enterprise-wide Questionnaire Management Tool (QMT) using Angular (TypeScript) and Java Spring Boot with CRUD operations and RESTful APIs integrating Workday and DataFabric for employee skills data management.
+    \item Developed interactive dashboards, charts, and client-facing kiosks using D3.js for Accenture offices (Talent Showcase), built Generative AI cards for Dipa chatbot in MS Teams, reducing support response time by 40\% for 5,000+ employees.
+    \item Optimized MS SQL Server database managing skills data for 10,000+ employees across Asia Pacific Accenture offices.
+    \item Architected enterprise-scale infrastructure using Azure DevOps, implemented CI/CD pipelines, resolved critical vulnerabilities through API testing with Postman for QMT and Talent Showcase applications.
+    \item Promoted to Software Engineer II for high-impact Agile sprint executions, cost reduction, and improving team productivity.
+\end{itemize}
+}
+
+\section{Projects}
+\sectioncontent{
+
+\textbf{Time-to-Therapy - Healthcare AI Platform} $|$ \href{https://www.innovationhacks.dev/}{Innovation Hacks} $|$ \href{https://github.com/Saurav-Kalaskar/time-to-therapy}{time-to-therapy.git} $|$ \href{https://time-to-therapy-4todzcphia-uc.a.run.app/}{time-to-therapy.app} \hfill \textbf{April 2026}
+\begin{itemize}
+    \item Built an AI-assisted prior authorization platform using Python FastAPI and production-focused web workflows, implementing clinician-facing modules for coverage matrix exploration, copilot drafting, and audit-ready history tracking.
+    \item Engineered a deterministic RAG pipeline with Qdrant vector retrieval over payer policy documents, adding schema validation and dead-letter handling to improve reliability of evidence-grounded policy lookups.
+    \item Integrated NVIDIA Nemotron 3 through OpenAI-compatible APIs for policy-grounded letter generation, with strict-mode error controls and fallback generation paths to ensure resilient runtime behavior.
+    \item Deployed the end-to-end service on Google Cloud Run with Docker, Auth0 support for secure clinician authentication.
+\end{itemize}
+
+\textbf{RealStream - Short Video Streaming Platform} $|$ \href{https://github.com/Saurav-Kalaskar/RealStream.git}{RealStream.git} $|$ \href{https://realstream.site/}{realstream.site} \hfill \textbf{February 2026}
+\begin{itemize}
+    \item Architected a full-stack short video platform using polyglot microservices - Java Spring Boot and a Python FastAPI scraper service, containerized via Docker and deployed at a custom domain via Cloudflare Tunnel.
+    \item Secured application with Google OAuth2 authentication and stateless JWT-based session management using Spring Security, configuring CORS policies for cross-origin Next.js frontend access with role-based access control.
+    \item Built a FastAPI scraper with YouTube Data API v3 ingestion, persisting engagement data to PostgreSQL and hashtag-indexed video metadata to MongoDB, with a TikTok-style React 19 frontend.
+\end{itemize}
+
+\textbf{RocketMind - AI Repository Analysis Tool} $|$ Rocket Mortgage Hackathon \hfill \textbf{June 2025}
+\begin{itemize}
+    \item Built AI-powered code analysis platform integrating AWS Bedrock LLM through a custom MCP server, enabling repository scanning with intelligent chunking for context-aware insights and code quality reviews.
+    \item Developed Angular frontend with an intuitive tab interface for onboarding documentation, architecture diagrams, and automated code recommendations, plus a Python FastAPI backend with efficient chunking for large codebase processing.
+    \item Secured 550+ private GitHub repositories using Auth0 SSO \& AWS IAM RBAC for certified users.
+\end{itemize}
+}
+
+\section{Publications \& Virtual Internship}
+\sectioncontent{
+{Published research papers: \href{https://www.jetir.org/view?paper=JETIRFD06059}{"Facial Recognition Based Emotion Analysis" at JETIR, October 2021}},  \href{https://drive.google.com/file/d/1oAuZegjDGTgZXc2WC4bzxeZQ2XF0wVNs/view?usp=sharing}{"Predicting Success of Crowdfunding Campaigns Using Machine Learning" at ICEAT-2022"} $|$
+\href{https://drive.google.com/file/d/1KVM6ewcn56FYNm9yJX6cdct4bhXv-Cez/view?usp=sharing}{J.P. Morgan - Software Engineering Virtual Experience}
+}
+\end{document}

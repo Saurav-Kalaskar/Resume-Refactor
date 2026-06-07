@@ -41,41 +41,6 @@ def get_nvidia_client(api_key: str) -> OpenAI:
     )
 
 
-def _extract_json_object(text: str) -> dict:
-    """
-    Robustly extract JSON object from LLM response, handling markdown backticks.
-    """
-    # Strip markdown backticks and code block indicators
-    cleaned = text.strip()
-    if cleaned.startswith("```json"):
-        cleaned = cleaned[7:]
-    elif cleaned.startswith("```"):
-        cleaned = cleaned[3:]
-    if cleaned.endswith("```"):
-        cleaned = cleaned[:-3]
-    cleaned = cleaned.strip()
-
-    # Try direct JSON parse first
-    try:
-        parsed = json.loads(cleaned)
-        if isinstance(parsed, dict):
-            return parsed
-    except json.JSONDecodeError:
-        pass
-
-    # Regex fallback: find anything between outermost braces
-    match = re.search(r'\{[\s\S]*\}', cleaned)
-    if match:
-        try:
-            parsed = json.loads(match.group(0))
-            if isinstance(parsed, dict):
-                return parsed
-        except json.JSONDecodeError:
-            pass
-
-    raise ValueError("Could not extract JSON object from LLM response")
-
-
 def extract_keywords(jd_text: str, model: str = settings.FAST_MODEL, max_keywords: int = MAX_KEYWORDS, api_key: Optional[str] = None) -> Dict[str, Any]:
     """
     Extract strategic context AND keywords from job description using LLM with user's API key.

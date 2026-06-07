@@ -15,6 +15,11 @@ const SS_ORIGINAL_BASE_RESUME = 'ats_originalBaseResume'
 const SS_RESULT = 'ats_result'
 const SS_COMPANY = 'ats_companyName'
 
+interface ResumeVersion {
+  version: string;
+  label: string;
+}
+
 interface RefactorResponse {
   status: string
   message: string
@@ -64,11 +69,29 @@ export default function App() {
   const [result, setResult] = useState<RefactorResponse | null>(() => ssGet<RefactorResponse | null>(SS_RESULT, null))
   const [error, setError] = useState('')
   const [hasKey, setHasKey] = useState(false)
+  const [resumeVersions, setResumeVersions] = useState<ResumeVersion[]>([{ version: "v1", label: "V1" }])
+  const [selectedResumeVersion, setSelectedResumeVersion] = useState("v1")
 
   // Check for existing valid API key on mount
   useEffect(() => {
     const key = getApiKey()
     setHasKey(!!key)
+  }, [])
+
+  // Fetch available resume versions on mount
+  useEffect(() => {
+    const apiKey = getApiKey()
+    if (!apiKey) return
+    fetch(`${API_URL}/api/v1/resumes`, {
+      headers: { 'X-NVIDIA-API-KEY': apiKey },
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.resumes && data.resumes.length > 0) {
+          setResumeVersions(data.resumes)
+        }
+      })
+      .catch(() => {})
   }, [])
 
   // Sync state to sessionStorage on every change
@@ -111,6 +134,7 @@ export default function App() {
     setOriginalBaseResume('')
     setResult(null)
     setError('')
+    setSelectedResumeVersion('v1')
 
     // Clear timer if running
     if (intervalRef.current) {
@@ -166,7 +190,8 @@ export default function App() {
         },
         body: JSON.stringify({
           job_description: jdText,
-          base_resume_tex: originalBaseResume || undefined, // Always send original
+          base_resume_tex: originalBaseResume || undefined,
+          resume_version: selectedResumeVersion,
         }),
         signal: controller.signal,
       })
@@ -256,6 +281,9 @@ export default function App() {
           downloadPDF={downloadPDF}
           downloadLatex={downloadLatex}
           elapsedTime={elapsedTime}
+          resumeVersions={resumeVersions}
+          selectedResumeVersion={selectedResumeVersion}
+          setSelectedResumeVersion={setSelectedResumeVersion}
         />
       </MacWindow>
     </div>

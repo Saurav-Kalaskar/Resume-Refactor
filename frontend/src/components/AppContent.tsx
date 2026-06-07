@@ -10,6 +10,11 @@ interface RefactorResponse {
   company_name?: string;
 }
 
+interface ResumeVersion {
+  version: string;
+  label: string;
+}
+
 interface AppContentProps {
   jdText: string;
   setJdText: (val: string) => void;
@@ -24,6 +29,9 @@ interface AppContentProps {
   downloadPDF: () => void;
   downloadLatex: () => void;
   elapsedTime: number;
+  resumeVersions: ResumeVersion[];
+  selectedResumeVersion: string;
+  setSelectedResumeVersion: (v: string) => void;
 }
 
 export const AppContent: React.FC<AppContentProps> = ({
@@ -39,6 +47,9 @@ export const AppContent: React.FC<AppContentProps> = ({
   downloadPDF,
   downloadLatex,
   elapsedTime,
+  resumeVersions,
+  selectedResumeVersion,
+  setSelectedResumeVersion,
 }) => {
   return (
     <>
@@ -47,6 +58,22 @@ export const AppContent: React.FC<AppContentProps> = ({
         <div className="border border-outline-variant/20 p-4 relative pt-6 bg-surface-container-low">
           <span className="absolute -top-3 left-2 bg-surface-container-low px-1 font-headline text-xs uppercase font-bold text-primary">Configuration</span>
           <form className="space-y-4" onSubmit={handleSubmit}>
+            {/* Resume Version Selector */}
+            <div className="flex flex-col gap-1">
+              <label className="font-label text-xs uppercase tracking-widest text-primary">Resume Version</label>
+              <select
+                className="w-full bg-surface-container-lowest border border-primary text-sm font-body px-2 py-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] transition-shadow"
+                style={{ borderTopColor: '#fff', borderLeftColor: '#fff', borderRightColor: '#000', borderBottomColor: '#000', borderWidth: '1px' }}
+                value={selectedResumeVersion}
+                onChange={(e) => setSelectedResumeVersion(e.target.value)}
+                disabled={loading}
+              >
+                {resumeVersions.map(v => (
+                  <option key={v.version} value={v.version}>{v.label}</option>
+                ))}
+              </select>
+            </div>
+
             {/* Target Job Description */}
             <div className="flex flex-col gap-1">
               <label className="font-label text-xs uppercase tracking-widest text-primary">Target Job Description</label>
