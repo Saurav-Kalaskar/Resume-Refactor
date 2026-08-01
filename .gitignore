@@ -32,3 +32,8 @@ frontend/.env.*.local
 # Skills folders
 skills/
 .claude/skills/
+
+# Tool-generated (ruflo / proven-config)
+.claude-flow/
+.claude/proven-config.json
+.claude/.proven-config-version
