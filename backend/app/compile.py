@@ -8,6 +8,22 @@ from typing import Optional, Tuple
 # Use pdfLaTeX only - matches Overleaf engine
 PDFLATEX_BIN = os.environ.get("PDFLATEX_BIN", "pdflatex")
 
+# Progressive line-spacing steps used to squeeze content onto one page.
+# Start at natural spacing (None = no override, preserves the author's layout),
+# then tighten in small steps until it fits.
+# ponytail: naive linespread squeeze with a hard floor. If content overflows even
+# at the floor, the resume is genuinely too long — upgrade path is a font-size or
+# geometry nudge, but that distorts the design, so we stop and report over-page
+# instead of mangling the layout.
+_LINESPREAD_STEPS = [None, 0.97, 0.94, 0.91, 0.88, 0.85]
+
+
+def _inject_linespread(tex_content: str, spread: Optional[float]) -> str:
+    if spread is None or "\\begin{document}" not in tex_content:
+        return tex_content
+    injection = f"\\linespread{{{spread}}}\n"
+    return tex_content.replace("\\begin{document}", injection + "\\begin{document}", 1)
+
 
 def _try_compile(tex_content: str) -> Tuple[Optional[bytes], Optional[str], Optional[int]]:
     """Compile LaTeX and return PDF bytes, error, and page count."""
@@ -30,15 +46,16 @@ def _try_compile(tex_content: str) -> Tuple[Optional[bytes], Optional[str], Opti
         if not pdf_path.exists():
             return None, "PDF not generated", None
 
-        # Parse page count from stdout
+        # Parse page count from stdout. pdflatex wraps the "Output written on
+        # <path> (N page(s), ...)" line, so match across newlines (DOTALL).
         combined = result.stdout + result.stderr
         page_count = None
-        match = re.search(r'Output written on .+?\((\d+)\s+pages?', combined)
+        match = re.search(r'Output written on .*?\((\d+)\s+pages?', combined, re.DOTALL)
         if match:
             page_count = int(match.group(1))
         else:
-            # Fallback: look for numeric page markers in log
-            pages_found = set(re.findall(r'\[(\d+)\]', combined))
+            # Fallback: page markers like [1] or [1{...}] — don't require a closing bracket.
+            pages_found = re.findall(r'\[(\d+)[\]\s{]', combined)
             if pages_found:
                 page_count = max(int(p) for p in pages_found)
 
@@ -47,26 +64,32 @@ def _try_compile(tex_content: str) -> Tuple[Optional[bytes], Optional[str], Opti
 
 
 def compile_tex(tex_content: str) -> Tuple[Optional[bytes], Optional[str]]:
-    """Compile LaTeX to PDF, using tighter spacing to ensure 1-page output."""
+    """Compile LaTeX to PDF, tightening line spacing progressively until it fits on one page.
 
-    # Apply tighter line spacing to reduce vertical space
-    # Tested: linespread 0.92 produces 1 page (default produces 2 pages)
-    if '\\begin{document}' in tex_content:
-        injection = '\\linespread{0.92}\n'
-        tex_mod = tex_content.replace('\\begin{document}', injection + '\\begin{document}')
-    else:
-        tex_mod = tex_content
+    Returns (pdf_bytes, error). The PDF returned is the best (fewest-page) result found;
+    if even the tightest spacing overflows, the last attempt is returned so the caller can
+    still surface a preview.
+    """
+    best_pdf: Optional[bytes] = None
+    best_pages: Optional[int] = None
+    last_error: Optional[str] = None
 
-    pdf_bytes, error, page_count = _try_compile(tex_mod)
+    for spread in _LINESPREAD_STEPS:
+        pdf_bytes, error, page_count = _try_compile(_inject_linespread(tex_content, spread))
+        if error:
+            last_error = error
+            continue  # a compile error at one spread may still succeed at another
 
-    if error:
-        return None, error
+        # Track the best result seen so far (unknown page count is treated as worst).
+        pages_rank = page_count if page_count is not None else 99
+        if best_pages is None or pages_rank < best_pages:
+            best_pdf, best_pages = pdf_bytes, pages_rank
 
-    # If not 1 page (or count unknown), return PDF anyway with a soft warning
-    # The main.py will handle this gracefully
-    if page_count is not None and page_count != 1:
-        return pdf_bytes, None  # Don't error, just return the PDF
+        if page_count == 1:
+            return pdf_bytes, None  # fits — stop tightening
 
-    return pdf_bytes, None
+    if best_pdf is not None:
+        # Overflowed at every spread, but we have a compiled PDF — return it (no hard error).
+        return best_pdf, None
 
-
+    return None, last_error or "Failed to compile resume"

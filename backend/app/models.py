@@ -5,14 +5,6 @@ class RefactorRequest(BaseModel):
     job_description: str
     base_resume_tex: Optional[str] = None
     model: Optional[str] = None
-    resume_version: Optional[str] = "v1"
-
-class ResumeVersion(BaseModel):
-    version: str
-    label: str
-
-class ResumeListResponse(BaseModel):
-    resumes: List[ResumeVersion]
 
 class RefactorResponse(BaseModel):
     status: str

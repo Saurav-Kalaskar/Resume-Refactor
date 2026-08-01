@@ -104,8 +104,18 @@ def extract_primary_label(raw_label: str) -> str:
     return label
 
 
-def canonical_section_key(section_title: str) -> Optional[str]:
+def canonical_section_key(section_title: str, extra_titles: Optional[Dict[str, str]] = None) -> Optional[str]:
+    """Match a \\section{} title to a canonical key.
+
+    extra_titles (key -> exact detected title) lets a caller recognize resumes that don't use the
+    static alias set at all (e.g. "Work History", "Technical Projects") — populated by LLM-assisted
+    section detection for third-party uploads. Checked first so a detected title always wins.
+    """
     normalized = normalize_for_match(section_title)
+    if extra_titles:
+        for key, title in extra_titles.items():
+            if title and normalized == normalize_for_match(title):
+                return key
     for key, aliases in TARGET_SECTION_ALIASES.items():
         if normalized in aliases:
             return key
@@ -221,13 +231,13 @@ def load_updates(updates_path: Path) -> Dict[str, List[UpdateEntry]]:
     return parse_updates(raw)
 
 
-def locate_section_spans(source_text: str) -> Dict[str, SectionSpan]:
+def locate_section_spans(source_text: str, extra_titles: Optional[Dict[str, str]] = None) -> Dict[str, SectionSpan]:
     matches = list(SECTION_RE.finditer(source_text))
     spans: Dict[str, SectionSpan] = {}
 
     for idx, match in enumerate(matches):
         title = collapse_spaces(match.group(1))
-        key = canonical_section_key(title)
+        key = canonical_section_key(title, extra_titles)
         if key is None or key in spans:
             continue
         start = match.start()

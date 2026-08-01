@@ -1,9 +1,10 @@
 import json
 import re
 import time
-from typing import List, Optional, Tuple, Dict, Any
+from typing import List, Optional, Dict, Any
 from openai import OpenAI
 from app.config import settings
+from app.llm import create_json_completion
 
 # Standardized keyword limit across extraction and bolding
 MAX_KEYWORDS = 15
@@ -57,14 +58,15 @@ def extract_keywords(jd_text: str, model: str = settings.FAST_MODEL, max_keyword
 
     for attempt in range(1, max_retries + 1):
         try:
-            resp = client.chat.completions.create(
-                model=model,
-                messages=[
+            resp = create_json_completion(
+                client,
+                model,
+                [
                     {"role": "system", "content": KEYWORD_EXTRACTION_PROMPT},
                     {"role": "user", "content": user_prompt},
                 ],
-                temperature=0.1,
                 max_tokens=1000,
+                temperature=0.1,
             )
 
             raw_response = resp.choices[0].message.content

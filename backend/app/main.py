@@ -1,14 +1,14 @@
 import base64
-import glob
 import json
 import os
-from typing import List, Optional
+import time
+from typing import List
 
 from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.models import RefactorRequest, RefactorResponse, ResumeListResponse, ResumeVersion
-from app.llm import generate_bullets
+from app.models import RefactorRequest, RefactorResponse
+from app.llm import generate_bullets, detect_sections
 from app.keywords import extract_keywords, bold_keywords_in_text, MAX_KEYWORDS
 from app.bridge import inject_bullets
 from app.compile import compile_tex
@@ -29,31 +29,13 @@ app.add_middleware(
 )
 
 TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), "..", "templates")
+DEFAULT_RESUME_PATH = os.environ.get("DEFAULT_RESUME_PATH", os.path.join(TEMPLATES_DIR, "resume.tex"))
 
 
-def get_resume_path(version: str) -> str:
-    return os.path.join(TEMPLATES_DIR, f"resume_{version}.tex")
-
-
-def get_available_resumes() -> List[ResumeVersion]:
-    pattern = os.path.join(TEMPLATES_DIR, "resume_v*.tex")
-    files = glob.glob(pattern)
-    resumes = []
-    for path in files:
-        basename = os.path.basename(path)
-        # expected format: resume_v<version>.tex
-        name = basename[len("resume_") : -len(".tex")]
-        resumes.append(ResumeVersion(version=name, label=name.upper()))
-    # stable sort by version string
-    resumes.sort(key=lambda r: r.version)
-    return resumes
-
-
-def get_default_resume(version: str = "v1") -> str:
-    path = os.environ.get("DEFAULT_RESUME_PATH", get_resume_path(version))
-    if os.path.exists(path):
-        return open(path, encoding="utf-8").read()
-    raise FileNotFoundError(f"No resume template found for version '{version}' at {path}")
+def get_default_resume() -> str:
+    if os.path.exists(DEFAULT_RESUME_PATH):
+        return open(DEFAULT_RESUME_PATH, encoding="utf-8").read()
+    raise FileNotFoundError(f"No resume template found at {DEFAULT_RESUME_PATH}")
 
 
 def normalize_section(section_data):
@@ -100,24 +82,18 @@ def bold_keywords_in_bullets(updates: dict, keywords: List[str], max_keywords: i
     return result
 
 
-@app.get("/api/v1/resumes", response_model=ResumeListResponse)
-async def list_resumes():
-    """Return all available resume versions from backend/templates/."""
-    return ResumeListResponse(resumes=get_available_resumes())
-
-
 @app.post("/api/v1/refactor", response_model=RefactorResponse)
 async def refactor_resume(
     request: RefactorRequest,
     x_nvidia_api_key: str = Header(..., alias="X-NVIDIA-API-KEY")
 ):
-    resume_version = request.resume_version or "v1"
-
     try:
         print(f"[MODEL CONFIG] FAST_MODEL={settings.FAST_MODEL}, REASONING_MODEL={settings.REASONING_MODEL}")
         print(f"[REQUEST MODEL] User requested: {request.model or 'default'}")
 
+        t_start = time.time()
         print(f"[STEP 1] extract_keywords() using FAST_MODEL={settings.FAST_MODEL}")
+        t0 = time.time()
         extraction_data = extract_keywords(
             request.job_description,
             model=settings.FAST_MODEL,
@@ -127,12 +103,34 @@ async def refactor_resume(
         company_name = extraction_data.get("company_name")
         company_mission = extraction_data.get("company_mission_and_product", "")
         core_problems = extraction_data.get("core_problems_to_solve", "")
-        print(f"[STEP 1 RESULT] Found {len(keywords)} keywords, Company: {company_name}")
+        print(f"[STEP 1 RESULT] Found {len(keywords)} keywords, Company: {company_name} — took {time.time()-t0:.1f}s")
 
-        base_tex = request.base_resume_tex or get_default_resume(resume_version)
+        base_tex = request.base_resume_tex or get_default_resume()
+
+        # Only run section detection for an uploaded (third-party) resume — the bundled default
+        # already has known section names, so skip the extra LLM round trip on that path.
+        if request.base_resume_tex:
+            print(f"[STEP 1b] detect_sections() using FAST_MODEL={settings.FAST_MODEL}")
+            t0 = time.time()
+            section_names = detect_sections(base_tex, settings.FAST_MODEL, x_nvidia_api_key)
+            print(f"[STEP 1b RESULT] {section_names} — took {time.time()-t0:.1f}s")
+
+            if not section_names.get("professional_experience") and not section_names.get("projects"):
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        "Could not find an Experience or Projects section in this resume. "
+                        "Make sure it uses \\section{...} headers (e.g. 'Experience', 'Projects', "
+                        "'Work History') with \\begin{itemize}/\\item bullets underneath — see the "
+                        "bundled template for a known-good structure."
+                    ),
+                )
+        else:
+            section_names = None  # bundled resume — known structure, no detection needed
 
         bullets_model = request.model or settings.REASONING_MODEL
         print(f"[STEP 2] generate_bullets() using model={bullets_model}")
+        t0 = time.time()
         updates = generate_bullets(
             jd_text=request.job_description,
             base_resume_tex=base_tex,
@@ -141,8 +139,9 @@ async def refactor_resume(
             all_keywords=keywords,
             model=bullets_model,
             api_key=x_nvidia_api_key,
+            section_names=section_names,
         )
-        print(f"[STEP 2 RESULT] Updates structure: {list(updates.keys())}")
+        print(f"[STEP 2 RESULT] Updates structure: {list(updates.keys())} — took {time.time()-t0:.1f}s")
 
         updates = bold_keywords_in_bullets(updates, keywords)
 
@@ -155,10 +154,12 @@ async def refactor_resume(
         print(f"[STEP 5] bullet_count={bullet_count}")
 
         print(f"[STEP 5] inject_bullets() passing {len(updates)} sections to refactor_bridge")
-        rebuilt_tex = inject_bullets(base_tex, updates, strict=False)
+        rebuilt_tex = inject_bullets(base_tex, updates, strict=False, section_titles=section_names)
 
         print(f"[STEP 6] compile_tex()")
+        t0 = time.time()
         pdf_bytes, error = compile_tex(rebuilt_tex)
+        print(f"[STEP 6 RESULT] compile — took {time.time()-t0:.1f}s | TOTAL {time.time()-t_start:.1f}s")
 
         if error:
             raise HTTPException(status_code=500, detail=error)
@@ -175,6 +176,8 @@ async def refactor_resume(
             company_name=company_name,
         )
 
+    except HTTPException:
+        raise  # already has the right status/detail (e.g. the 400 raised above) — don't rewrap as 500
     except FileNotFoundError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

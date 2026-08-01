@@ -8,10 +8,14 @@ def inject_bullets(
     tex_content: str,
     updates: Dict[str, Any],
     strict: bool = False,
+    section_titles: Optional[Dict[str, Optional[str]]] = None,
 ) -> str:
     """Inject bullets into LaTeX using refactor_bridge logic.
 
     Simplified wrapper around the bridge functions.
+
+    section_titles (canonical key -> exact detected \\section{} title) lets the bridge recognize
+    third-party resumes whose section names aren't in refactor_bridge's static alias set.
     """
     import sys
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '.claude', 'skills', 'resume-refactor'))
@@ -30,7 +34,8 @@ def inject_bullets(
 
     updates = parse_updates(updates)
 
-    section_spans = locate_section_spans(tex_content)
+    extra_titles = {k: v for k, v in (section_titles or {}).items() if v}
+    section_spans = locate_section_spans(tex_content, extra_titles or None)
 
     rewritten = tex_content
 

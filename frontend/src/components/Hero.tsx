@@ -230,7 +230,7 @@ export function Hero({ onSave }: HeroProps) {
       {/* Footer */}
       <footer className="bg-[#f4f3f3] dark:bg-neutral-900 text-black dark:text-white flex flex-col md:flex-row justify-between items-center w-full px-8 py-3 border-t border-black dark:border-white">
         <div className="text-sm font-bold text-black dark:text-white font-headline flex-1">
-          Developer: SAURAV KALASKAR
+          ATS Refactor — Open Source
         </div>
         <div className="flex gap-6 mt-4 md:mt-0">
           <a
